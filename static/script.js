@@ -1,0 +1,120 @@
+const sampleOk = `#( LIME demo: constants, a function, loops and a struct )#
+Same HELLO: Word = "Hello, " # a constant
+Vary world: Word = "Lime \\"Grocer\\"\\n"
+Vary count: Number = 0
+Vary pi: Rational = 3.14
+Vary temp: Rational = -4.5
+Vary lowest: Number = -2147483648
+Vary open: Truth = True
+Vary nums: Number[] = Basket[1, 2, 3]
+
+Recipe Point {
+    Number x
+    Number y
+}
+
+Blend add(a: Number, b: Number) -> Number {
+    Produce a + b
+}`;
+
+const sampleErr = `Vary 4ever_lime: Number = 1
+Vary big: Number = 2147483648
+Vary whole: Rational = 360.
+Vary name: Word = 'Suisei'
+Vary msg: Word = "path\\folder"
+Blend(x) -> Bland {}
+Vary q: Number = 10--5
+Vary w: Word = "never closed
+#( this comment is never closed`;
+
+function updateLineNumbers() {
+    const textarea = document.getElementById('code');
+    const lines = textarea.value.split('\n').length;
+    const lineNumDiv = document.getElementById('line-numbers');
+    lineNumDiv.innerHTML = Array.from({ length: lines }, (_, i) => i + 1).join('<br>');
+    document.getElementById('char-count').innerText = `${textarea.value.length} chars`;
+}
+
+function loadSample(type) {
+    document.getElementById('code').value = type === 'ok' ? sampleOk : sampleErr;
+    updateLineNumbers();
+    runAnalysis();
+}
+
+function clearEditor() {
+    document.getElementById('code').value = '';
+    updateLineNumbers();
+    document.getElementById('token-table').innerHTML = '<tr><td colspan="4" class="empty-table-msg">Editor cleared.</td></tr>';
+    document.getElementById('console-log').innerHTML = '<span>Console cleared.</span>';
+}
+
+async function runAnalysis() {
+    const code = document.getElementById('code').value;
+    const showNewlines = document.getElementById('show-newlines').checked;
+
+    const res = await fetch('/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code })
+    });
+
+    const data = await res.json();
+    
+    // Render Token Table
+    const tbody = document.getElementById('token-table');
+    tbody.innerHTML = '';
+    
+    let displayTokens = data.tokens;
+    if (!showNewlines) {
+        displayTokens = displayTokens.filter(t => t.type !== 'newline');
+    }
+
+    document.getElementById('token-count').innerText = `${displayTokens.length} Tokens`;
+
+    displayTokens.forEach(t => {
+        const tr = document.createElement('tr');
+        if (t.flagged) tr.className = 'flagged-row';
+        tr.innerHTML = `
+            <td>${t.line}:${t.col}</td>
+            <td><code>${t.flagged ? '⚠️ ' : ''}${escapeHtml(t.type)}</code></td>
+            <td><code>${escapeHtml(t.lexeme)}</code></td>
+            <td>${escapeHtml(t.category)}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+
+    // Render Error / Console Log
+    const consoleLog = document.getElementById('console-log');
+    const errStatus = document.getElementById('error-status');
+    consoleLog.innerHTML = '';
+
+    if (data.errors.length === 0) {
+        errStatus.innerText = 'Status: OK (0 Errors)';
+        errStatus.style.color = 'var(--accent-lime)';
+        consoleLog.innerHTML = `<div class="log-success">✔ Tokenization succeeded — 0 lexical errors. Recognized ${displayTokens.length} tokens cleanly.</div>`;
+    } else {
+        errStatus.innerText = `Status: ${data.errors.length} Error(s)`;
+        errStatus.style.color = 'var(--error-red)';
+        
+        data.errors.forEach((e, idx) => {
+            const card = document.createElement('div');
+            card.className = 'log-error-card';
+            card.innerHTML = `
+                <strong>[Error ${idx + 1}] ${escapeHtml(e.kind)} at ${e.line}:${e.col}</strong><br>
+                <span>Reason: ${escapeHtml(e.message)}</span><br>
+                ${e.expected ? `<span style="color: var(--text-muted)">Expected: ${escapeHtml(e.expected)}</span>` : ''}
+            `;
+            consoleLog.appendChild(card);
+        });
+    }
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+// Initialize line numbers on initial page load
+document.addEventListener('DOMContentLoaded', () => {
+    updateLineNumbers();
+});

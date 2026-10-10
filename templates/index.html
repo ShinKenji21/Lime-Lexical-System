@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lime Lexical Analyzer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    <!-- Top Action Toolbar -->
+    <div class="top-bar">
+        <div class="brand">
+            <span class="brand-title">Lime Lexical Analyzer</span>
+            <span class="brand-subtitle">Language Specification v1.0</span>
+        </div>
+        <div class="actions">
+            <button class="btn-tokenize" onclick="runAnalysis()">▶ Run Lexer</button>
+            <button class="btn-blue" onclick="loadSample('ok')">&lt;/&gt; Valid Sample</button>
+            <button onclick="loadSample('err')">Error Sample</button>
+            <button onclick="clearEditor()">Clear</button>
+            <label class="checkbox-label">
+                <input type="checkbox" id="show-newlines" onchange="runAnalysis()"> Show newline tokens
+            </label>
+        </div>
+    </div>
+
+    <!-- Layout Container (Format of Picture 1) -->
+    <div class="layout-container">
+        
+        <!-- Top Half Split -->
+        <div class="top-split">
+            
+            <!-- Top Left: Code Editor -->
+            <div class="pane">
+                <div class="pane-header">
+                    <span>LIME Editor</span>
+                    <span id="char-count" class="pane-subtext">0 chars</span>
+                </div>
+                <div class="editor-wrapper">
+                    <div class="line-numbers" id="line-numbers">1</div>
+                    <textarea class="code-editor" id="code" spellcheck="false" oninput="updateLineNumbers()">#( LIME demo: constants, a function, loops and a struct )#
+Same HELLO: Word = "Hello, " # a constant
+Vary world: Word = "Lime \"Grocer\"\n"
+Vary count: Number = 0
+Vary pi: Rational = 3.14
+Vary temp: Rational = -4.5
+Vary lowest: Number = -2147483648
+Vary open: Truth = True
+Vary nums: Number[] = Basket[1, 2, 3]
+
+Recipe Point {
+    Number x
+    Number y
+}
+
+Blend add(a: Number, b: Number) -> Number {
+    Produce a + b
+}</textarea>
+                </div>
+            </div>
+
+            <!-- Top Right: Token Output Table -->
+            <div class="pane">
+                <div class="pane-header">
+                    <span>Token Output</span>
+                    <span id="token-count" class="pane-accent-subtext">0 Tokens</span>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Line:Col</th>
+                                <th>Token Type</th>
+                                <th>Lexeme</th>
+                                <th>Category</th>
+                            </tr>
+                        </thead>
+                        <tbody id="token-table">
+                            <tr>
+                                <td colspan="4" class="empty-table-msg">
+                                    Click '▶ Run Lexer' to display generated tokens.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Bottom: Error / Console Log -->
+        <div class="pane bottom-pane">
+            <div class="pane-header">
+                <span>Error / Console Log</span>
+                <span id="error-status" class="status-text">Status: Ready</span>
+            </div>
+            <div class="console-log" id="console-log">
+                <span class="log-success">System initialized. Ready to tokenize LIME code.</span>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

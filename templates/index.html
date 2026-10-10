@@ -8,24 +8,31 @@
 </head>
 <body>
 
+    <!-- Hidden file input for importing local files -->
+    <input type="file" id="file-input" style="display: none;" accept=".txt,.lime" onchange="handleFileImport(event)">
+
     <!-- Top Action Toolbar -->
     <div class="top-bar">
         <div class="brand">
-            <span class="brand-title">Lime Lexical Analyzer</span>
-            <span class="brand-subtitle">Language Specification v1.0</span>
+            <img src="{{ url_for('static', filename='Lime-logo.png') }}" alt="Lime Logo" class="brand-logo">
+            <div class="brand-text">
+                <span class="brand-title">Lime Lexical Analyzer</span>
+            </div>
         </div>
         <div class="actions">
             <button class="btn-tokenize" onclick="runAnalysis()">▶ Run Lexer</button>
-            <button class="btn-blue" onclick="loadSample('ok')">&lt;/&gt; Valid Sample</button>
-            <button onclick="loadSample('err')">Error Sample</button>
-            <button onclick="clearEditor()">Clear</button>
+            <button class="btn-blue" onclick="triggerImport()">📂 Import File</button>
+            <button class="btn-secondary" onclick="saveToFile()">💾 Save File</button>
+            <button class="btn-secondary" onclick="loadSample('ok')">&lt;/&gt; Valid Sample</button>
+            <button class="btn-secondary" onclick="loadSample('err')">Error Sample</button>
+            <button class="btn-danger" onclick="clearEditor()">Clear</button>
             <label class="checkbox-label">
                 <input type="checkbox" id="show-newlines" onchange="runAnalysis()"> Show newline tokens
             </label>
         </div>
     </div>
 
-    <!-- Layout Container (Format of Picture 1) -->
+    <!-- Layout Container -->
     <div class="layout-container">
         
         <!-- Top Half Split -->

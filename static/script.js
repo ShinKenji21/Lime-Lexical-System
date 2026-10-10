@@ -35,19 +35,60 @@ function updateLineNumbers() {
     document.getElementById('char-count').innerText = `${textarea.value.length} chars`;
 }
 
+// Reset tables and console when loading sample or resetting code
+function resetOutputViews() {
+    document.getElementById('token-table').innerHTML = '<tr><td colspan="4" class="empty-table-msg">Click \'▶ Run Lexer\' to display generated tokens.</td></tr>';
+    document.getElementById('token-count').innerText = '0 Tokens';
+    document.getElementById('console-log').innerHTML = '<span>Ready to analyze LIME code.</span>';
+    const errStatus = document.getElementById('error-status');
+    errStatus.innerText = 'Status: Ready';
+    errStatus.style.color = 'var(--text-muted)';
+}
+
+// Load sample code into the editor WITHOUT running tokenization
 function loadSample(type) {
     document.getElementById('code').value = type === 'ok' ? sampleOk : sampleErr;
     updateLineNumbers();
-    runAnalysis();
+    resetOutputViews();
 }
 
 function clearEditor() {
     document.getElementById('code').value = '';
     updateLineNumbers();
-    document.getElementById('token-table').innerHTML = '<tr><td colspan="4" class="empty-table-msg">Editor cleared.</td></tr>';
-    document.getElementById('console-log').innerHTML = '<span>Console cleared.</span>';
+    resetOutputViews();
 }
 
+// Import File functionality
+function triggerImport() {
+    document.getElementById('file-input').click();
+}
+
+function handleFileImport(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        document.getElementById('code').value = e.target.result;
+        updateLineNumbers();
+        resetOutputViews();
+    };
+    reader.readAsText(file);
+    event.target.value = ''; // Reset input selection
+}
+
+// Save File functionality
+function saveToFile() {
+    const code = document.getElementById('code').value;
+    const blob = new Blob([code], { type: 'text/plain;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'program.txt';
+    link.click();
+    URL.revokeObjectURL(link.href);
+}
+
+// Tokenize on button click
 async function runAnalysis() {
     const code = document.getElementById('code').value;
     const showNewlines = document.getElementById('show-newlines').checked;
@@ -71,17 +112,21 @@ async function runAnalysis() {
 
     document.getElementById('token-count').innerText = `${displayTokens.length} Tokens`;
 
-    displayTokens.forEach(t => {
-        const tr = document.createElement('tr');
-        if (t.flagged) tr.className = 'flagged-row';
-        tr.innerHTML = `
-            <td>${t.line}:${t.col}</td>
-            <td><code>${t.flagged ? '⚠️ ' : ''}${escapeHtml(t.type)}</code></td>
-            <td><code>${escapeHtml(t.lexeme)}</code></td>
-            <td>${escapeHtml(t.category)}</td>
-        `;
-        tbody.appendChild(tr);
-    });
+    if (displayTokens.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="empty-table-msg">No tokens generated.</td></tr>';
+    } else {
+        displayTokens.forEach(t => {
+            const tr = document.createElement('tr');
+            if (t.flagged) tr.className = 'flagged-row';
+            tr.innerHTML = `
+                <td>${t.line}:${t.col}</td>
+                <td><code>${t.flagged ? '⚠️ ' : ''}${escapeHtml(t.type)}</code></td>
+                <td><code>${escapeHtml(t.lexeme)}</code></td>
+                <td>${escapeHtml(t.category)}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
 
     // Render Error / Console Log
     const consoleLog = document.getElementById('console-log');
@@ -114,7 +159,30 @@ function escapeHtml(str) {
     return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
-// Initialize line numbers on initial page load
+// Initialize line numbers on initial page load without auto-tokenizing
 document.addEventListener('DOMContentLoaded', () => {
+    updateLineNumbers();
+});
+
+
+// Add a scroll listener to sync the gutter
+function updateLineNumbers() {
+    const textarea = document.getElementById('code');
+    const lines = textarea.value.split('\n').length;
+    const lineNumDiv = document.getElementById('line-numbers');
+    lineNumDiv.innerHTML = Array.from({ length: lines }, (_, i) => i + 1).join('<br>');
+    document.getElementById('char-count').innerText = `${textarea.value.length} chars`;
+    syncScroll();
+}
+
+function syncScroll() {
+    const textarea = document.getElementById('code');
+    const lineNumDiv = document.getElementById('line-numbers');
+    lineNumDiv.scrollTop = textarea.scrollTop;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const textarea = document.getElementById('code');
+    textarea.addEventListener('scroll', syncScroll);
     updateLineNumbers();
 });

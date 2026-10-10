@@ -1,7 +1,37 @@
 from flask import Flask, render_template, request, jsonify
-from LimeLexer import Lexer, SAMPLE_OK, SAMPLE_ERR
+from LimeLexer import Lexer
 
 app = Flask(__name__)
+
+# Standard sample programs defined directly in app.py
+SAMPLE_OK = '''#( LIME demo: constants, a function, loops and a struct )#
+Same HELLO: Word = "Hello, " # a constant
+Vary world: Word = "Lime \\"Grocer\\"\\n"
+Vary count: Number = 0
+Vary pi: Rational = 3.14
+Vary temp: Rational = -4.5
+Vary lowest: Number = -2147483648
+Vary open: Truth = True
+Vary nums: Number[] = Basket[1, 2, 3]
+
+Recipe Point {
+    Number x
+    Number y
+}
+
+Blend add(a: Number, b: Number) -> Number {
+    Produce a + b
+}'''
+
+SAMPLE_ERR = '''Vary 4ever_lime: Number = 1
+Vary big: Number = 2147483648
+Vary whole: Rational = 360.
+Vary name: Word = 'Suisei'
+Vary msg: Word = "path\\folder"
+Blend(x) -> Bland {}
+Vary q: Number = 10--5
+Vary w: Word = "never closed
+#( this comment is never closed'''
 
 @app.route('/')
 def home():

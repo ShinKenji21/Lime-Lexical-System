@@ -45,11 +45,9 @@ def analyze():
     lexer = Lexer(source_code)
     lexer.tokenize()
     
-    # Format tokens for the JSON response
+    # Format tokens for the JSON response (including newline tokens)
     tokens_payload = []
     for tok in lexer.tokens:
-        if tok.type == "newline":
-            continue
         tokens_payload.append({
             'line': tok.line,
             'col': tok.col,

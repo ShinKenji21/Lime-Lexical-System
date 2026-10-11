@@ -1,16 +1,22 @@
 import sys
 
+try:                                    # the lexer itself needs no GUI toolkit
+    import tkinter as tk
+    from tkinter import ttk, filedialog, messagebox
+    import tkinter.font as tkfont
+except ImportError:                     # pragma: no cover
+    tk = None
+
 # --------------------------------------------------------------------------
 # Tunable spec constants
 # --------------------------------------------------------------------------
 MAX_IDENTIFIER_LENGTH = 30          # Identifiers rule 3
-MAX_INT_DIGITS = 10                 # int_lit: nonzero digit + up to 9 more
-MAX_FRAC_DIGITS = 10                # flo_lit: fractional part up to 10 digits
-INT_MAX = 2147483647                # Number is a signed 32-bit integer
-INT_MIN_MAGNITUDE = 2147483648      # magnitude of the smallest Number: -2147483648
-ESCAPE_CHARS = ('n', 't', '\\', '"')
-STRING_ALLOWS_RAW_TAB = True        
-STRING_ALLOWS_RAW_NEWLINE = True  
+MAX_INT_DIGITS = 20                 # int_lit: nonzero digit + up to 19 more
+MAX_FRAC_DIGITS = 20                # flo_lit: fractional part up to 20 digits
+# escapeseq of  (\")(utf8_str/escapeseq)*(\")  : a backslash followed by one of these
+ESCAPE_CHARS = ('n', 't', '\\', '"' )
+STRING_ALLOWS_RAW_TAB = True        # see module docstring
+STRING_ALLOWS_RAW_NEWLINE = True   # see module docstring
 
 
 # ==========================================================================
@@ -33,7 +39,11 @@ class Token:
 
 
 class LexicalError(Exception):
-    """A lexical error with an exact location and an explanation."""
+    """A lexical error with an exact location and an explanation.
+
+    Lexer.tokenize(raise_on_error=True) raises one of these whose `.errors`
+    attribute holds every error that was found.
+    """
 
     def __init__(self, line, col, message, found="", expected="",
                  lexeme="", length=1, kind="Lexical error"):
@@ -50,7 +60,9 @@ class LexicalError(Exception):
 
 
 # ==========================================================================
-#  Character classes
+#  Character classes  (plain comparisons - no str.isalpha / regex)
+#  The end of input is represented by '' and is treated as a newline by the
+#  delimiter checks below.
 # ==========================================================================
 def is_lower(c):
     if c == '':
@@ -162,7 +174,8 @@ def is_control_char(c):                     # U+0000-U+001F or U+007F
 
 
 # ==========================================================================
-#  Delimiter sets
+#  Delimiter sets from "VIII. Regular definitions".  Each function answers:
+#  "is character c a legal FOLLOW character for this token?"
 # ==========================================================================
 def d_func(c):                              # delim_func
     return c == '('
@@ -198,10 +211,10 @@ def d_taun(c):                              # same members as delim_blan
     return False
 
 
-def d_type(c):                              # newline, space, =, comma, ), {, [, #
+def d_type(c):                              # newline, space, comma, ), {, [, #
     if is_newline(c):
         return True
-    if c == ' ' or is_assign_op(c) or c == ',' or c == ')':
+    if c == ' ' or c == ',' or c == ')':
         return True
     if c == '{' or c == '[' or c == '#':
         return True
@@ -224,44 +237,20 @@ def d_prod(c):                              # newline, space, ;, (, }, #
     return False
 
 
-def d_bool(c):                              # newline, whitespace, =, comma, ;, !, ), ], {, }, #
+def d_bool(c):                              # newline, whitespace, comma, ;, !, ), ], {, }, #
     if is_newline(c) or is_whitespace(c):
         return True
-    if is_assign_op(c) or c == ',' or c == ';' or c == '!':
+    if c == ',' or c == ';' or c == '!':
         return True
     if c == ')' or c == ']' or c == '{' or c == '}' or c == '#':
         return True
     return False
 
 
-def d_arco(c):                              # lets_nums, space, -, (
-    if is_lets_nums(c):
-        return True
-    if c == ' ' or c == '-' or c == '(':
-        return True
-    return False
-
-
-def d_minu(c):                              # lets_nums, space, (
-    if is_lets_nums(c):
-        return True
-    if c == ' ' or c == '(':
-        return True
-    return False
-
-
-def d_aras(c):                              # ", delim_arco
-    if c == '"':
-        return True
-    return d_arco(c)
-
-
-def d_unar(c):                              # ++ / --
+def d_unar(c):                              # newline, whitespace, letters, comma, ;, ), ], }, #
     if is_newline(c) or is_whitespace(c) or is_letter(c):
         return True
-    if is_arith_op(c) or is_compare_op(c) or is_assign_op(c):
-        return True
-    if c == ',' or c == ';' or c == '!' or c == ')' or c == ']':
+    if c == ',' or c == ';' or c == ')' or c == ']':
         return True
     if c == '}' or c == '#':
         return True
@@ -290,8 +279,6 @@ def d_pare(c):                              # '('
 
 def d_clpa(c):                              # ')'
     if is_newline(c) or is_whitespace(c):
-        return True
-    if is_arith_op(c) or is_compare_op(c) or is_assign_op(c):
         return True
     if c == ',' or c == ';' or c == '!' or c == ')' or c == ']':
         return True
@@ -402,6 +389,7 @@ def d_flo(c):                               # delim_flo = delim_int
     return d_int(c)
 
 
+# delimiter key -> (predicate, human readable list for error messages)
 DELIMS = {
     'func': (d_func, "'('"),
     'bask': (d_bask, "'['"),
@@ -409,19 +397,16 @@ DELIMS = {
     'ctrl': (d_ctrl, "a space or '('"),
     'blan': (d_blan, "a newline, space, '{' or '#'"),
     'taun': (d_taun, "a newline, space, '{' or '#'"),
-    'type': (d_type, "a newline, space, '=', ',', ')', '{', '[' or '#'"),
+    'type': (d_type, "a newline, space, ',', ')', '{', '[' or '#'"),
     'reup': (d_reup, "a newline, space/tab, ';', '}' or '#'"),
     'prod': (d_prod, "a newline, space, ';', '(', '}' or '#'"),
-    'bool': (d_bool, "a newline, space/tab, '=', ',', ';', '!', ')', ']', '{', '}' or '#'"),
-    'arco': (d_arco, "a letter, digit, space, '-' or '('"),
-    'minu': (d_minu, "a letter, digit, space or '('"),
-    'aras': (d_aras, "a '\"', letter, digit, space, '-' or '('"),
-    'unar': (d_unar, "a newline, space/tab, letter, operator, ',', ';', '!', ')', ']', '}' or '#'"),
+    'bool': (d_bool, "a newline, space/tab, ',', ';', '!', ')', ']', '{', '}' or '#'"),
+    'unar': (d_unar, "a newline, space/tab, letter, ',', ';', ')', ']', '}' or '#'"),
     'strc': (d_strc, "a letter"),
     'coma': (d_coma, "a letter, digit, space, '-', '\"', '(' or '['"),
     'pare': (d_pare, "a letter, digit, space, ';', '-', '\"', '(' or ')'"),
-    'clpa': (d_clpa, "a newline, space/tab, operator, ',', ';', '!', ')', ']', '{', '}' or '#'"),
-    'clsq': (d_clsq, "'[', or a newline, space/tab, operator, ',', ';', '!', ')', ']', '{', '}' or '#'"),
+    'clpa': (d_clpa, "a newline, space/tab, ',', ';', '!', ')', ']', '{', '}' or '#'"),
+    'clsq': (d_clsq, "'[', or a newline, space/tab, ',', ';', '!', ')', ']', '{', '}' or '#'"),
     'squa': (d_squa, "a letter, digit, space, '-', '(', '[', ']' or '\"'"),
     'brac': (d_brac, "a letter, newline, space/tab, '+', '-', '}' or '#'"),
     'clbr': (d_clbr, "a newline, space/tab, ';', '#' or '}'"),
@@ -463,9 +448,9 @@ def concat_pattern(text):
 
 
 PATTERN_ID = "(letters)(lets_nums/_/\u03bb)\u00b2\u2079"
-PATTERN_INT = "(zero)/(-/\u03bb)(nonzero)(numbers/\u03bb)\u2079"
-PATTERN_FLO = ("((zero)/(-/\u03bb)(nonzero)(numbers/\u03bb)\u2079)(period)"
-               "(numbers)(numbers/\u03bb)\u2079")
+PATTERN_INT = "(zero)/(-/\u03bb)(nonzero)(numbers/\u03bb)\u00b9\u2079"
+PATTERN_FLO = ("((-/\u03bb)(zero)/(-/\u03bb)(nonzero)(numbers/\u03bb)\u00b9\u2079)(period)"
+               "(numbers)(numbers/\u03bb)\u00b9\u2079")
 PATTERN_STR = '(")(utf8_str/escapeseq)*(")'
 PATTERN_SINGLE = "(#)(utf8_comm)*"
 PATTERN_MULTI = "(#)(()(utf8_comm/newline)*())(#)"
@@ -485,6 +470,7 @@ class Lexer:
         self.tokens = []
         self.errors = []
         self.overflow_end = -1      # where the last over-long identifier ended
+        self.zero_resume = -1       # where tokenization restarted after a number error (leading zero / digit limit)
         # absolute offset of the first char of every line, for line:col
         self.line_starts = [0]
         i = 0
@@ -535,7 +521,7 @@ class Lexer:
         c = self.at(follow_pos)
         if follow_pos == self.overflow_end and d_id(c):
             # This lexeme is the tail of an over-long identifier that was split at
-            # the 30-character limit. The character after it is a legal follow
+            # the 30-character limit.  The character after it is a legal follow
             # character for an identifier, so it is not a second error.
             if self.tokens:
                 self.tokens[-1].flagged = False
@@ -549,8 +535,8 @@ class Lexer:
 
     # ------------------------------------------------------------- main --
     def tokenize(self, raise_on_error=False):
-        """Scan the whole source. Returns the token list; errors are in
-        self.errors. With raise_on_error=True a LexicalError (carrying all
+        """Scan the whole source.  Returns the token list; errors are in
+        self.errors.  With raise_on_error=True a LexicalError (carrying all
         errors in `.errors`) is raised instead if anything went wrong."""
         while True:
             c = self.at(self.pos)
@@ -581,6 +567,12 @@ class Lexer:
 
             if c == '-' and is_nonzero_digit(self.at(self.pos + 1)):
                 self.scan_number()                        # (-/lambda)(nonzero)...
+                continue
+
+            if (c == '-' and self.at(self.pos + 1) == '0'
+                    and self.at(self.pos + 2) == '.'
+                    and is_digit(self.at(self.pos + 3))):
+                self.scan_number()                        # (-/lambda)(zero)(period)(numbers)...
                 continue
 
             if is_letter(c):                              # reserved word / id
@@ -898,7 +890,7 @@ class Lexer:
         length = p - start
         if length > MAX_IDENTIFIER_LENGTH:
             # The first MAX_IDENTIFIER_LENGTH characters become an 'id' and the
-            # overflow is reported as an error. Scanning then RESUMES at the cut,
+            # overflow is reported as an error.  Scanning then RESUMES at the cut,
             # so whatever follows is tokenized normally (digits -> int_lit, letters
             # -> id or a reserved word, ...).
             cut = start + MAX_IDENTIFIER_LENGTH
@@ -951,15 +943,18 @@ class Lexer:
         if self.at(p) == '0':
             p += 1
             if is_digit(self.at(p)):
-                end = self.numeric_run_end(start)
-                self.error(start,
+                # a literal starting with 0 cannot continue with more digits:
+                # tokenize the lone '0', flag the next char, start again there
+                self.emit("int_lit", start, p, "literal", PATTERN_INT)
+                self.error(p,
                            "Leading zero: an integer must be '0' alone or start "
-                           "with a nonzero digit (Literals rule 1).",
-                           found="'0' followed by digit '%s'" % self.at(p),
-                           expected="'0' alone, or a nonzero first digit",
-                           lexeme=self.src[start:end], length=end - start,
-                           kind="Invalid number")
-                self.pos = end
+                           "with a nonzero digit (Literals rule 1); the '0' was "
+                           "tokenized as 'int_lit' and tokenization starts again here.",
+                           found=show_char(self.at(p)),
+                           expected="end of literal after '0' (a digit cannot follow)",
+                           lexeme="", length=1, kind="Invalid number")
+                self.zero_resume = p
+                self.pos = p
                 return
         else:
             p += 1
@@ -979,6 +974,7 @@ class Lexer:
                        found=show_char(self.at(cut)),
                        expected="end of integer literal (max %d digits)" % MAX_INT_DIGITS,
                        lexeme="", length=1, kind="Invalid number")
+            self.zero_resume = cut
             self.pos = cut              # resume scanning AT the error character
             return
 
@@ -1000,33 +996,35 @@ class Lexer:
                 p += 1
             frac_digits = p - frac_start
             if frac_digits > MAX_FRAC_DIGITS:
-                self.error(start,
-                           "Fractional part is longer than the %d digits allowed "
-                           "(Literals rule 2)." % MAX_FRAC_DIGITS,
-                           found="too many fractional digits",
-                           expected="at most %d fractional digits" % MAX_FRAC_DIGITS,
-                           lexeme=self.src[start:p], length=p - start,
-                           kind="Invalid number")
-                self.pos = p
+                # tokenize only the first MAX_FRAC_DIGITS fractional digits as
+                # flo_lit; the rest is scanned again from the error character
+                # (so it comes back out as int_lit)
+                cut = frac_start + MAX_FRAC_DIGITS
+                self.emit("flo_lit", start, cut, "literal", PATTERN_FLO)
+                self.error(cut,
+                           "Fractional part exceeds the %d-digit limit "
+                           "(Literals rule 2); the first %d fractional digits were "
+                           "tokenized as 'flo_lit' and tokenization starts again here."
+                           % (MAX_FRAC_DIGITS, MAX_FRAC_DIGITS),
+                           found=show_char(self.at(cut)),
+                           expected="end of float literal (max %d fractional digits)" % MAX_FRAC_DIGITS,
+                           lexeme="", length=1, kind="Invalid number")
+                self.zero_resume = cut
+                self.pos = cut
                 return
             is_float = True
         else:
             is_float = False
-            value = int(self.src[start:p])
-            if value > INT_MAX or value < -INT_MIN_MAGNITUDE:
-                self.error(start,
-                           "Integer literal %s is outside Number's range "
-                           "(%d to %d, Data Types rule 2)."
-                           % (self.src[start:p], -INT_MIN_MAGNITUDE, INT_MAX),
-                           found=self.src[start:p],
-                           expected="a value from %d to %d" % (-INT_MIN_MAGNITUDE, INT_MAX),
-                           lexeme=self.src[start:p], length=p - start,
-                           kind="Out-of-range literal")
-                self.pos = p
-                return
 
         # ---- what comes right after the number? ---------------------------
         follow = self.at(p)
+        if is_id_char(follow) and self.zero_resume == start:
+            # restarted after a number error: the number is its own token and
+            # the letters that follow are tokenized separately (as an identifier)
+            ttype = "flo_lit" if is_float else "int_lit"
+            self.emit(ttype, start, p, "literal", PATTERN_FLO if is_float else PATTERN_INT)
+            self.pos = p
+            return
         if is_id_char(follow):
             q = p
             while is_id_char(self.at(q)):
@@ -1141,7 +1139,7 @@ class Lexer:
     def scan_comment(self):
         start = self.pos
         if self.at(start + 1) == '(':
-            # ---- multi-line comment #( ... )# (does not nest) ----------
+            # ---- multi-line comment  #( ... )#   (does not nest) ----------
             q = start + 2
             bad = False
             while True:
@@ -1185,7 +1183,7 @@ class Lexer:
             self.pos = end
             return
 
-        # ---- single-line comment # ... end of line -----------------------
+        # ---- single-line comment  # ... end of line -----------------------
         q = start + 1
         bad = False
         while True:
@@ -1215,7 +1213,7 @@ class Lexer:
         start = self.pos
         end = start + len(lexeme)
         follow = self.at(end)
-        if dkey in ('arco', 'aras', 'minu', 'unar', 'arrw'):
+        if dkey in ('spac', 'unar', 'arrw'):
             category = "operator"
         else:
             category = "delimiter"
@@ -1233,55 +1231,55 @@ class Lexer:
 
         if c == '+':
             if c1 == '=':
-                self.sym('+=', 'arco')
+                self.sym('+=', 'spac')
             elif c1 == '+':
                 self.sym('++', 'unar')
             else:
-                self.sym('+', 'aras')
+                self.sym('+', 'spac')
         elif c == '-':
             if c1 == '=':
-                self.sym('-=', 'arco')
+                self.sym('-=', 'spac')
             elif c1 == '-':
                 self.sym('--', 'unar')
             elif c1 == '>':
                 self.sym('->', 'arrw')
             else:
-                self.sym('-', 'minu')
+                self.sym('-', 'spac')
         elif c == '*':
             if c1 == '=':
-                self.sym('*=', 'arco')
+                self.sym('*=', 'spac')
             else:
-                self.sym('*', 'arco')
+                self.sym('*', 'spac')
         elif c == '/':
             if c1 == '=':
-                self.sym('/=', 'arco')
+                self.sym('/=', 'spac')
             else:
-                self.sym('/', 'arco')
+                self.sym('/', 'spac')
         elif c == '%':
             if c1 == '=':
-                self.sym('%=', 'arco')
+                self.sym('%=', 'spac')
             else:
-                self.sym('%', 'arco')
+                self.sym('%', 'spac')
         elif c == '^':
-            self.sym('^', 'arco')
+            self.sym('^', 'spac')
         elif c == '=':
             if c1 == '=':
-                self.sym('==', 'aras')
+                self.sym('==', 'spac')
             else:
-                self.sym('=', 'aras')
+                self.sym('=', 'spac')
         elif c == '>':
             if c1 == '=':
-                self.sym('>=', 'arco')
+                self.sym('>=', 'spac')
             else:
-                self.sym('>', 'arco')
+                self.sym('>', 'spac')
         elif c == '<':
             if c1 == '=':
-                self.sym('<=', 'arco')
+                self.sym('<=', 'spac')
             else:
-                self.sym('<', 'arco')
+                self.sym('<', 'spac')
         elif c == '!':
             if c1 == '=':
-                self.sym('!=', 'aras')
+                self.sym('!=', 'spac')
             else:
                 self.error(p, "A lone '!' is not a LIME symbol; it is only valid "
                            "as part of '!='. (Use 'Not' for logical negation.)",
@@ -1333,6 +1331,522 @@ def tokenize(source, raise_on_error=True):
     return lx.tokenize(raise_on_error=raise_on_error)
 
 
+# ==========================================================================
+#  Sample programs for the GUI
+# ==========================================================================
+SAMPLE_OK = '''Squeeze("hello world")
+'''
+
+SAMPLE_ERR = '''Vary 4ever_lime: Number = 1
+Vary big: Number = 2147483648
+Vary whole: Rational = 360.
+Vary name: Word = 'Suisei'
+Vary msg: Word = "path\\folder"
+Blend(x) -> Bland {}
+Vary this_is_a_valid_identifier_1234: Number = 1
+Vary pct%: Number = 007
+Vary q: Number = 10--5
+Vary w: Word = "never closed
+#( this comment is never closed
+'''
+
+
+# ==========================================================================
+#  GUI
+# ==========================================================================
+CATEGORY_COLORS = {
+    "declaration": "#7b1fa2",
+    "datatype": "#00695c",
+    "logical": "#ad1457",
+    "control": "#1565c0",
+    "builtin": "#ef6c00",
+    "identifier": "#212121",
+    "literal": "#2e7d32",
+    "operator": "#c62828",
+    "delimiter": "#546e7a",
+    "comment": "#8d8d8d",
+    "newline": "#b0b0b0",
+}
+
+
+RUN_SHORTCUTS = {
+    "Ctrl+9": "<Control-Key-9>",
+    "Ctrl+Enter": "<Control-Return>",
+    "F5": "<F5>",
+    "Ctrl+R": "<Control-r>",
+    "Ctrl+L": "<Control-l>",
+    "Alt+R": "<Alt-r>",
+}
+DEFAULT_SHORTCUT = "Ctrl+9"
+
+
+class LimeLexerApp:
+    def __init__(self, root):
+        self.root = root
+        root.title("LIME Lexer  -  \"Blend and fun\"")
+        root.geometry("1180x800")
+        root.minsize(820, 560)
+
+        families = tkfont.families()
+        mono = "Courier New"
+        for name in ("Consolas", "Cascadia Mono", "DejaVu Sans Mono",
+                     "Menlo", "Monaco", "Liberation Mono"):
+            if name in families:
+                mono = name
+                break
+        self.mono = tkfont.Font(family=mono, size=11)
+        self.mono_bold = tkfont.Font(family=mono, size=11, weight="bold")
+
+        self.last_errors = []
+        self.last_tokens = []
+
+        self.build_style()
+        self.build_toolbar()
+        self.build_panes()
+        self.build_statusbar()
+        self.bind_keys()
+        self.load_text(SAMPLE_OK)
+        self.set_status("Ready. Press %s (or Ctrl+Enter) to tokenize." % DEFAULT_SHORTCUT)
+
+    # ---------------------------------------------------------- layout --
+    def build_style(self):
+        style = ttk.Style()
+        try:
+            style.theme_use("clam")
+        except tk.TclError:
+            pass
+        style.configure("Run.TButton", font=("TkDefaultFont", 10, "bold"),
+                        foreground="white", background="#2e7d32", padding=(14, 6))
+        style.map("Run.TButton", background=[("active", "#388e3c"),
+                                             ("pressed", "#1b5e20")])
+        style.configure("Treeview", font=self.mono, rowheight=22)
+        style.configure("Treeview.Heading", font=("TkDefaultFont", 10, "bold"))
+
+    def build_toolbar(self):
+        bar = ttk.Frame(self.root, padding=(8, 6))
+        bar.pack(side="top", fill="x")
+        ttk.Button(bar, text="\u25b6  Run Lexer", style="Run.TButton",
+                   command=self.run_lexer).pack(side="left")
+        ttk.Label(bar, text="  Shortcut:", foreground="#777").pack(side="left")
+        self.shortcut_var = tk.StringVar(value=DEFAULT_SHORTCUT)
+        self.shortcut_box = ttk.Combobox(bar, textvariable=self.shortcut_var, width=11,
+                                         state="readonly",
+                                         values=list(RUN_SHORTCUTS.keys()))
+        self.shortcut_box.pack(side="left", padx=(2, 0))
+        self.shortcut_box.bind("<<ComboboxSelected>>", self.on_shortcut_changed)
+        ttk.Separator(bar, orient="vertical").pack(side="left", fill="y", padx=10)
+        ttk.Button(bar, text="Open\u2026", command=self.open_file).pack(side="left", padx=2)
+        ttk.Button(bar, text="Save\u2026", command=self.save_file).pack(side="left", padx=2)
+        ttk.Button(bar, text="Valid sample",
+                   command=lambda: self.load_text(SAMPLE_OK)).pack(side="left", padx=2)
+        ttk.Button(bar, text="Error sample",
+                   command=lambda: self.load_text(SAMPLE_ERR)).pack(side="left", padx=2)
+        ttk.Button(bar, text="Clear", command=lambda: self.load_text("")).pack(side="left", padx=2)
+        self.show_newlines = tk.BooleanVar(value=False)
+        ttk.Checkbutton(bar, text="Show newline tokens", variable=self.show_newlines,
+                        command=self.refill_tokens).pack(side="right")
+
+    def build_panes(self):
+        # outer split: top row (editor + token output) over the console log
+        self.paned = ttk.PanedWindow(self.root, orient="vertical")
+        self.paned.pack(side="top", fill="both", expand=True, padx=8, pady=(0, 4))
+
+        # ---- top row: editor (left) + token output (right) ----
+        self.top_paned = ttk.PanedWindow(self.paned, orient="horizontal")
+        self.paned.add(self.top_paned, weight=3)
+
+        # editor with line-number gutter
+        editor_box = ttk.Frame(self.top_paned)
+        self.gutter = tk.Canvas(editor_box, width=52, highlightthickness=0,
+                                background="#f0f0f0")
+        self.gutter.pack(side="left", fill="y")
+        self.vsb = ttk.Scrollbar(editor_box, orient="vertical")
+        self.vsb.pack(side="right", fill="y")
+        self.editor = tk.Text(editor_box, font=self.mono, undo=True, wrap="none",
+                              background="#fdfdfd", foreground="#202020",
+                              insertbackground="#000", tabs=(self.mono.measure("    "),),
+                              yscrollcommand=self.on_editor_scroll, padx=6, pady=4)
+        self.hsb = ttk.Scrollbar(editor_box, orient="horizontal", command=self.editor.xview)
+        self.editor.configure(xscrollcommand=self.hsb.set)
+        self.vsb.configure(command=self.editor.yview)
+        self.hsb.pack(side="bottom", fill="x")
+        self.editor.pack(side="left", fill="both", expand=True)
+        self.top_paned.add(editor_box, weight=3)
+
+        # token output, right-hand pane
+        tok_box = ttk.Frame(self.top_paned)
+        self.tok_header = ttk.Label(tok_box, text="Token Output",
+                                    font=("TkDefaultFont", 10, "bold"))
+        self.tok_header.pack(side="top", anchor="w", padx=6, pady=(6, 2))
+
+        # token list (top) and full-lexeme preview (bottom) can each be
+        # resized, since a multi-line string/comment lexeme needs more room
+        # than the table row that lists it
+        tok_split = ttk.PanedWindow(tok_box, orient="vertical")
+        tok_split.pack(side="top", fill="both", expand=True, padx=(6, 0), pady=(0, 6))
+
+        tree_box = ttk.Frame(tok_split)
+        cols = ("loc", "type", "lexeme")
+        self.tree = ttk.Treeview(tree_box, columns=cols, show="headings",
+                                 selectmode="browse")
+        self.tree.heading("loc", text="Line:Col")
+        self.tree.heading("type", text="Token Type")
+        self.tree.heading("lexeme", text="Lexeme")
+        self.tree.column("loc", width=80, anchor="w", stretch=False)
+        self.tree.column("type", width=120, anchor="w", stretch=False)
+        self.tree.column("lexeme", width=300, anchor="w")
+        tsb = ttk.Scrollbar(tree_box, orient="vertical", command=self.tree.yview)
+        self.tree.configure(yscrollcommand=tsb.set)
+        tsb.pack(side="right", fill="y")
+        self.tree.pack(side="left", fill="both", expand=True)
+        for cat, color in CATEGORY_COLORS.items():
+            self.tree.tag_configure(cat, foreground=color)
+        self.tree.tag_configure("flagged", background="#ffe3e3")
+        self.tree.bind("<Double-1>", self.on_token_double_click)
+        self.tree.bind("<<TreeviewSelect>>", self.on_token_select)
+        tok_split.add(tree_box, weight=3)
+
+        # full-lexeme preview: the table row truncates a multi-line string
+        # or multi-line comment to its first line, so this shows it whole
+        preview_box = ttk.Frame(tok_split)
+        self.preview_header = ttk.Label(preview_box, text="Full Token Text",
+                                        font=("TkDefaultFont", 9, "bold"))
+        self.preview_header.pack(side="top", anchor="w", pady=(2, 2))
+        self.preview = tk.Text(preview_box, font=self.mono, wrap="none", height=5,
+                               state="disabled", background="#fdfdfd",
+                               foreground="#202020", padx=6, pady=4)
+        psb = ttk.Scrollbar(preview_box, orient="vertical", command=self.preview.yview)
+        self.preview.configure(yscrollcommand=psb.set)
+        psb.pack(side="right", fill="y")
+        self.preview.pack(side="left", fill="both", expand=True)
+        tok_split.add(preview_box, weight=1)
+        self.top_paned.add(tok_box, weight=2)
+
+        # ---- bottom row: error / console log, full width ----
+        con_box = ttk.Frame(self.paned)
+        self.con_header = ttk.Label(con_box, text="Error / Console Log",
+                                    font=("TkDefaultFont", 10, "bold"))
+        self.con_header.pack(side="top", anchor="w", padx=6, pady=(6, 2))
+        self.console = tk.Text(con_box, font=self.mono, wrap="word", state="disabled",
+                               background="#1e1e1e", foreground="#d4d4d4",
+                               padx=8, pady=6)
+        csb = ttk.Scrollbar(con_box, orient="vertical", command=self.console.yview)
+        self.console.configure(yscrollcommand=csb.set)
+        csb.pack(side="right", fill="y")
+        self.console.pack(side="left", fill="both", expand=True, padx=(6, 0), pady=(0, 6))
+        self.console.tag_configure("ok", foreground="#6fdc8c", font=self.mono_bold)
+        self.console.tag_configure("err", foreground="#ff6b6b", font=self.mono_bold)
+        self.console.tag_configure("label", foreground="#ffb86c")
+        self.console.tag_configure("dim", foreground="#8a8a8a")
+        self.console.tag_configure("hdr", foreground="#8be9fd", font=self.mono_bold)
+        self.paned.add(con_box, weight=2)
+
+    def build_statusbar(self):
+        self.status = tk.StringVar()
+        ttk.Label(self.root, textvariable=self.status, anchor="w", relief="sunken",
+                  padding=(8, 2)).pack(side="bottom", fill="x")
+
+    def set_status(self, text):
+        self.status.set(text)
+
+    # ------------------------------------------------------- key binds --
+    def bind_keys(self):
+        self.active_shortcut = None
+        self.apply_shortcut(DEFAULT_SHORTCUT)
+        self.editor.bind("<Control-Return>", self.on_ctrl_enter)   # always works
+        self.editor.bind("<Tab>", self.on_tab)
+        self.editor.bind("<ISO_Left_Tab>", self.on_shift_tab)
+        self.editor.bind("<Shift-Tab>", self.on_shift_tab)
+        self.editor.bind("<Return>", self.on_return)
+        self.editor.bind("<KeyRelease>", lambda e: self.redraw_gutter())
+        self.editor.bind("<Configure>", lambda e: self.redraw_gutter())
+        self.editor.bind("<<Paste>>", lambda e: self.root.after_idle(self.redraw_gutter))
+        self.editor.bind("<Button-1>", lambda e: self.root.after_idle(self.redraw_gutter))
+
+    def apply_shortcut(self, name):
+        """Bind the chosen run-lexer shortcut (replacing the previous one)."""
+        if self.active_shortcut:
+            for w in (self.root, self.editor):
+                w.unbind(RUN_SHORTCUTS[self.active_shortcut])
+        seq = RUN_SHORTCUTS[name]
+        self.root.bind(seq, self.on_ctrl_enter)
+        self.editor.bind(seq, self.on_ctrl_enter)
+        self.active_shortcut = name
+        self.set_status("Press %s to run the lexer." % name)
+
+    def on_shortcut_changed(self, event=None):
+        self.apply_shortcut(self.shortcut_var.get())
+        self.editor.focus_set()
+
+    def on_ctrl_enter(self, event=None):
+        self.run_lexer()
+        return "break"
+
+    def on_tab(self, event):                 # insert a real tab character
+        self.editor.insert("insert", "\t")
+        return "break"
+
+    def on_shift_tab(self, event):           # remove one leading tab (or up to 4 spaces)
+        line = self.editor.index("insert").split(".")[0]
+        text = self.editor.get(line + ".0", line + ".4")
+        if text[:1] == "\t":
+            self.editor.delete(line + ".0", line + ".1")
+        else:
+            n = 0
+            while n < len(text) and text[n] == " ":
+                n += 1
+            if n > 0:
+                self.editor.delete(line + ".0", line + "." + str(n))
+        return "break"
+
+    def on_return(self, event):              # keep indentation of previous line
+        line = self.editor.index("insert").split(".")[0]
+        text = self.editor.get(line + ".0", "insert")
+        n = 0
+        while n < len(text) and text[n] in (" ", "\t"):
+            n += 1
+        self.editor.insert("insert", "\n" + text[:n])
+        self.editor.see("insert")
+        self.redraw_gutter()
+        return "break"
+
+    # ----------------------------------------------------- line numbers --
+    def on_editor_scroll(self, first, last):
+        self.vsb.set(first, last)
+        self.redraw_gutter()
+
+    def redraw_gutter(self):
+        self.gutter.delete("all")
+        index = self.editor.index("@0,0")
+        while True:
+            info = self.editor.dlineinfo(index)
+            if info is None:
+                break
+            y = info[1]
+            number = index.split(".")[0]
+            self.gutter.create_text(46, y + 2, anchor="ne", text=number,
+                                    font=self.mono, fill="#8a8a8a")
+            nxt = self.editor.index(index + "+1line")
+            if nxt == index:
+                break
+            index = nxt
+
+    # --------------------------------------------------------- file I/O --
+    def load_text(self, text):
+        self.editor.delete("1.0", "end")
+        self.editor.insert("1.0", text)
+        self.editor.edit_reset()
+        self.clear_results()
+        self.root.after_idle(self.redraw_gutter)
+
+    def open_file(self):
+        path = filedialog.askopenfilename(
+            filetypes=[("LIME / text files", "*.lime *.txt"), ("All files", "*.*")])
+        if not path:
+            return
+        try:
+            with open(path, "r", encoding="utf-8") as fh:
+                self.load_text(fh.read())
+            self.set_status("Opened " + path)
+        except (OSError, UnicodeDecodeError) as exc:
+            messagebox.showerror("Open failed", str(exc))
+
+    def save_file(self):
+        path = filedialog.asksaveasfilename(defaultextension=".lime",
+                                            filetypes=[("LIME source", "*.lime")])
+        if not path:
+            return
+        try:
+            with open(path, "w", encoding="utf-8") as fh:
+                fh.write(self.editor.get("1.0", "end-1c"))
+            self.set_status("Saved " + path)
+        except OSError as exc:
+            messagebox.showerror("Save failed", str(exc))
+
+    # ---------------------------------------------------------- results --
+    def clear_results(self):
+        for item in self.tree.get_children():
+            self.tree.delete(item)
+        self.console.configure(state="normal")
+        self.console.delete("1.0", "end")
+        self.console.configure(state="disabled")
+        self.set_preview(None)
+        self.last_errors = []
+        self.last_tokens = []
+        self.tok_header.configure(text="Token Output")
+        self.con_header.configure(text="Error / Console Log")
+
+    def display_lexeme(self, tok):
+        text = tok.lexeme
+        if tok.type == "newline":
+            return "\\n"
+        cut = text.find("\n")
+        if cut >= 0:
+            text = text[:cut] + " \u21b5 \u2026"
+        text = text.replace("\t", "\\t")
+        return text
+
+    def refill_tokens(self):
+        for item in self.tree.get_children():
+            self.tree.delete(item)
+        show_nl = self.show_newlines.get()
+        for i, tok in enumerate(self.last_tokens):
+            if tok.type == "newline" and not show_nl:
+                continue
+            shown_type = tok.type
+            tags = (tok.category,)
+            if tok.flagged:
+                shown_type = "\u26a0 " + tok.type
+                tags = (tok.category, "flagged")
+            self.tree.insert("", "end", iid=str(i),
+                             values=("%d:%d" % (tok.line, tok.col), shown_type,
+                                     self.display_lexeme(tok)),
+                             tags=tags)
+
+    def log(self, text, tag=None):
+        self.console.configure(state="normal")
+        if tag:
+            self.console.insert("end", text, tag)
+        else:
+            self.console.insert("end", text)
+        self.console.configure(state="disabled")
+
+    def run_lexer(self):
+        source = self.editor.get("1.0", "end-1c")
+        self.clear_results()
+        lexer = Lexer(source)
+        try:
+            lexer.tokenize()
+        except Exception as exc:                          # never crash the GUI
+            self.log("Internal lexer failure: %r\n" % (exc,), "err")
+            return
+        self.last_tokens = lexer.tokens
+        self.last_errors = lexer.errors
+        self.refill_tokens()
+
+        real = 0
+        newlines = 0
+        for tok in lexer.tokens:
+            if tok.type == "newline":
+                newlines += 1
+            else:
+                real += 1
+        errs = len(lexer.errors)
+        self.tok_header.configure(text="Token Output (%d)" % real)
+
+        if errs == 0:
+            self.con_header.configure(text="Error / Console Log (OK)")
+            self.log("\u2714 Tokenization succeeded - 0 lexical errors.\n", "ok")
+            self.log("Total tokens: %d" % real, "hdr")
+            self.log("   (plus %d newline tokens)\n" % newlines, "dim")
+            counts = {}
+            order = []
+            for tok in lexer.tokens:
+                if tok.type == "newline":
+                    continue
+                if tok.category not in counts:
+                    counts[tok.category] = 0
+                    order.append(tok.category)
+                counts[tok.category] += 1
+            for cat in order:
+                self.log("  %-12s %d\n" % (cat, counts[cat]), "dim")
+            self.set_status("OK - %d tokens, 0 errors." % real)
+        else:
+            self.con_header.configure(text="Error / Console Log (%d)" % errs)
+            flagged = 0
+            for tok in lexer.tokens:
+                if tok.flagged:
+                    flagged += 1
+            self.log("\u2716 %d lexical error%s found. %d token%s recognised "
+                     "(%d flagged \u26a0 in the table: valid lexeme, illegal "
+                     "follow character).\n\n"
+                     % (errs, "" if errs == 1 else "s", real,
+                        " was" if real == 1 else "s were", flagged), "err")
+            self.log("Tip: double-click an error to jump to it in the editor.\n\n", "dim")
+            for i, err in enumerate(lexer.errors):
+                tag = "e%d" % i
+                self.console.tag_configure(tag)
+                self.console.tag_bind(tag, "<Double-1>",
+                                      lambda ev, k=i: self.jump_to_error(k))
+                self.console.tag_bind(tag, "<Enter>",
+                                      lambda ev: self.console.configure(cursor="hand2"))
+                self.console.tag_bind(tag, "<Leave>",
+                                      lambda ev: self.console.configure(cursor=""))
+                self.console.configure(state="normal")
+                self.console.insert("end", "[%d] %s at %d:%d\n" %
+                                    (i + 1, err.kind, err.line, err.col), ("err", tag))
+                self.console.configure(state="disabled")
+                self.log("    Faulty    : ", "label")
+                self.log("%s\n" % (err.found or err.lexeme))
+                if err.lexeme and err.lexeme != err.found:
+                    self.log("    Token     : ", "label")
+                    shown = err.lexeme.replace("\n", "\u21b5")
+                    if len(shown) > 60:
+                        shown = shown[:57] + "..."
+                    self.log("%s\n" % shown)
+                self.log("    Why       : ", "label")
+                self.log("%s\n" % err.message)
+                if err.expected:
+                    self.log("    Expected  : ", "label")
+                    self.log("%s\n" % err.expected)
+                self.log("\n")
+            self.set_status("%d lexical error%s, %d tokens recognised."
+                            % (errs, "" if errs == 1 else "s", real))
+        self.console.see("1.0")
+
+    # ------------------------------------------------- editor highlight --
+    def jump_to_error(self, k):
+        if k >= len(self.last_errors):
+            return
+        err = self.last_errors[k]
+        self.jump_to(err.line, err.col, err.length)
+
+    def jump_to(self, line, col, length):
+        start = "%d.%d" % (line, col - 1)
+        end = "%d.%d" % (line, col - 1 + max(1, length))
+        self.editor.focus_set()
+        self.editor.mark_set("insert", start)
+        self.editor.see(start)
+        self.editor.tag_remove("sel", "1.0", "end")
+        self.editor.tag_add("sel", start, end)
+        self.redraw_gutter()
+
+    def on_token_double_click(self, event):
+        sel = self.tree.selection()
+        if not sel:
+            return
+        tok = self.last_tokens[int(sel[0])]
+        first_line = tok.lexeme.split("\n")[0]
+        self.jump_to(tok.line, tok.col, len(first_line))
+
+    def on_token_select(self, event=None):
+        sel = self.tree.selection()
+        if not sel:
+            self.set_preview(None)
+            return
+        self.set_preview(self.last_tokens[int(sel[0])])
+
+    def set_preview(self, tok):
+        self.preview.configure(state="normal")
+        self.preview.delete("1.0", "end")
+        if tok is not None:
+            lines = tok.lexeme.count("\n") + 1
+            if lines > 1:
+                self.preview_header.configure(
+                    text="Full Token Text  -  %s at %d:%d (%d lines)"
+                    % (tok.type, tok.line, tok.col, lines))
+            else:
+                self.preview_header.configure(
+                    text="Full Token Text  -  %s at %d:%d" % (tok.type, tok.line, tok.col))
+            self.preview.insert("1.0", tok.lexeme)
+        else:
+            self.preview_header.configure(text="Full Token Text")
+        self.preview.configure(state="disabled")
+
+
+# ==========================================================================
+#  Entry points
+# ==========================================================================
 def run_cli(path):
     if path == "-":
         source = sys.stdin.read()
@@ -1354,6 +1868,17 @@ def run_cli(path):
     return 1 if lexer.errors else 0
 
 
+def main():
+    if len(sys.argv) > 1 and sys.argv[1] == "--cli":
+        path = sys.argv[2] if len(sys.argv) > 2 else "-"
+        sys.exit(run_cli(path))
+    if tk is None:
+        print("tkinter is not available in this Python installation.")
+        sys.exit(2)
+    root = tk.Tk()
+    LimeLexerApp(root)
+    root.mainloop()
+
+
 if __name__ == "__main__":
-    path = sys.argv[2] if len(sys.argv) > 2 else "-"
-    sys.exit(run_cli(path))
+    main()

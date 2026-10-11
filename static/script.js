@@ -27,16 +27,28 @@ Vary q: Number = 10--5
 Vary w: Word = "never closed
 #( this comment is never closed`;
 
+// Global cache for the last fetched token set to support instant toggle re-rendering
+let cachedTokens = [];
+
+// Line number calculation and scroll synchronization
 function updateLineNumbers() {
     const textarea = document.getElementById('code');
     const lines = textarea.value.split('\n').length;
     const lineNumDiv = document.getElementById('line-numbers');
     lineNumDiv.innerHTML = Array.from({ length: lines }, (_, i) => i + 1).join('<br>');
     document.getElementById('char-count').innerText = `${textarea.value.length} chars`;
+    syncScroll();
 }
 
-// Reset tables and console when loading sample or resetting code
+function syncScroll() {
+    const textarea = document.getElementById('code');
+    const lineNumDiv = document.getElementById('line-numbers');
+    lineNumDiv.scrollTop = textarea.scrollTop;
+}
+
+// Reset tables and console views
 function resetOutputViews() {
+    cachedTokens = [];
     document.getElementById('token-table').innerHTML = '<tr><td colspan="4" class="empty-table-msg">Click \'▶ Run Lexer\' to display generated tokens.</td></tr>';
     document.getElementById('token-count').innerText = '0 Tokens';
     document.getElementById('console-log').innerHTML = '<span>Ready to analyze LIME code.</span>';
@@ -45,7 +57,7 @@ function resetOutputViews() {
     errStatus.style.color = 'var(--text-muted)';
 }
 
-// Load sample code into the editor WITHOUT running tokenization
+// Sample code loaders
 function loadSample(type) {
     document.getElementById('code').value = type === 'ok' ? sampleOk : sampleErr;
     updateLineNumbers();
@@ -74,7 +86,7 @@ function handleFileImport(event) {
         resetOutputViews();
     };
     reader.readAsText(file);
-    event.target.value = ''; // Reset input selection
+    event.target.value = '';
 }
 
 // Save File functionality
@@ -88,10 +100,44 @@ function saveToFile() {
     URL.revokeObjectURL(link.href);
 }
 
-// Tokenize on button click
+// Render token list into table
+function renderTokenTable() {
+    const tbody = document.getElementById('token-table');
+    const showNewlines = document.getElementById('show-newlines').checked;
+    tbody.innerHTML = '';
+
+    let displayTokens = cachedTokens;
+    if (!showNewlines) {
+        displayTokens = displayTokens.filter(t => t.type !== 'newline');
+    }
+
+    document.getElementById('token-count').innerText = `${displayTokens.length} Tokens`;
+
+    if (displayTokens.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="empty-table-msg">No tokens generated.</td></tr>';
+        return;
+    }
+
+    displayTokens.forEach(t => {
+        const tr = document.createElement('tr');
+        if (t.flagged) tr.className = 'flagged-row';
+
+        // Render '\n' visually as explicit text in the table
+        const displayLexeme = t.type === 'newline' ? '\\n' : t.lexeme;
+
+        tr.innerHTML = `
+            <td>${t.line}:${t.col}</td>
+            <td><code>${t.flagged ? '⚠️ ' : ''}${escapeHtml(t.type)}</code></td>
+            <td><code>${escapeHtml(displayLexeme)}</code></td>
+            <td>${escapeHtml(t.category)}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+// Run Lexical Analysis backend request
 async function runAnalysis() {
     const code = document.getElementById('code').value;
-    const showNewlines = document.getElementById('show-newlines').checked;
 
     const res = await fetch('/analyze', {
         method: 'POST',
@@ -101,32 +147,9 @@ async function runAnalysis() {
 
     const data = await res.json();
     
-    // Render Token Table
-    const tbody = document.getElementById('token-table');
-    tbody.innerHTML = '';
-    
-    let displayTokens = data.tokens;
-    if (!showNewlines) {
-        displayTokens = displayTokens.filter(t => t.type !== 'newline');
-    }
-
-    document.getElementById('token-count').innerText = `${displayTokens.length} Tokens`;
-
-    if (displayTokens.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" class="empty-table-msg">No tokens generated.</td></tr>';
-    } else {
-        displayTokens.forEach(t => {
-            const tr = document.createElement('tr');
-            if (t.flagged) tr.className = 'flagged-row';
-            tr.innerHTML = `
-                <td>${t.line}:${t.col}</td>
-                <td><code>${t.flagged ? '⚠️ ' : ''}${escapeHtml(t.type)}</code></td>
-                <td><code>${escapeHtml(t.lexeme)}</code></td>
-                <td>${escapeHtml(t.category)}</td>
-            `;
-            tbody.appendChild(tr);
-        });
-    }
+    // Store full token array in cache and render
+    cachedTokens = data.tokens || [];
+    renderTokenTable();
 
     // Render Error / Console Log
     const consoleLog = document.getElementById('console-log');
@@ -136,7 +159,7 @@ async function runAnalysis() {
     if (data.errors.length === 0) {
         errStatus.innerText = 'Status: OK (0 Errors)';
         errStatus.style.color = 'var(--accent-lime)';
-        consoleLog.innerHTML = `<div class="log-success">✔ Tokenization succeeded — 0 lexical errors. Recognized ${displayTokens.length} tokens cleanly.</div>`;
+        consoleLog.innerHTML = `<div class="log-success">✔ Tokenization succeeded — 0 lexical errors. Recognized ${cachedTokens.length} total tokens.</div>`;
     } else {
         errStatus.innerText = `Status: ${data.errors.length} Error(s)`;
         errStatus.style.color = 'var(--error-red)';
@@ -154,35 +177,30 @@ async function runAnalysis() {
     }
 }
 
+// Utility to escape HTML strings safely
 function escapeHtml(str) {
     if (!str) return '';
-    return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
 }
 
-// Initialize line numbers on initial page load without auto-tokenizing
-document.addEventListener('DOMContentLoaded', () => {
-    updateLineNumbers();
-});
-
-
-// Add a scroll listener to sync the gutter
-function updateLineNumbers() {
-    const textarea = document.getElementById('code');
-    const lines = textarea.value.split('\n').length;
-    const lineNumDiv = document.getElementById('line-numbers');
-    lineNumDiv.innerHTML = Array.from({ length: lines }, (_, i) => i + 1).join('<br>');
-    document.getElementById('char-count').innerText = `${textarea.value.length} chars`;
-    syncScroll();
-}
-
-function syncScroll() {
-    const textarea = document.getElementById('code');
-    const lineNumDiv = document.getElementById('line-numbers');
-    lineNumDiv.scrollTop = textarea.scrollTop;
-}
-
+// DOM Event Listeners initialization
 document.addEventListener('DOMContentLoaded', () => {
     const textarea = document.getElementById('code');
+    const newlineCheckbox = document.getElementById('show-newlines');
+
+    // Sync line counter and scroll position
     textarea.addEventListener('scroll', syncScroll);
+    textarea.addEventListener('input', updateLineNumbers);
+
+    // Live update token table when checkbox toggling changes
+    if (newlineCheckbox) {
+        newlineCheckbox.addEventListener('change', renderTokenTable);
+    }
+
     updateLineNumbers();
 });

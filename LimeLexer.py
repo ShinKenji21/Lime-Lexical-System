@@ -26,7 +26,8 @@ class Token:
         self.col = col               # 1-based
         self.category = category     # declaration / datatype / operator / ...
         self.pattern = pattern       # regular expression from the spec
-        self.flagged = flagged       # True: lexeme valid but its follow char was not
+        self.flagged = flagged       # True: invalid token (bad follow char, etc.) -
+                                     # removed from the output, reported as an error
 
     def __repr__(self):
         return "Token(%s, %r, %d:%d)" % (self.type, self.lexeme, self.line, self.col)
@@ -475,6 +476,7 @@ class Lexer:
         self.n = len(source)
         self.pos = 0
         self.tokens = []
+        self.invalid_tokens = []    # tokens removed from the output (see tokenize)
         self.errors = []
         self.overflow_end = -1      # where the last over-long identifier ended
         self.overflow_cut = -1      # where the last over-long identifier was cut (error already reported there)
@@ -609,6 +611,13 @@ class Lexer:
         # EOF: marks the end of the file and serves as the delimiter of the
         # very last token (Regular definitions: EOF).  Always the last token.
         self.emit("EOF", self.n, self.n, "eof", PATTERN_EOF)
+
+        # Invalid tokens are NOT part of the output: only valid tokens stay in
+        # self.tokens.  Every invalid one already has its own entry in
+        # self.errors; the removed tokens are kept in self.invalid_tokens only
+        # for debugging.
+        self.invalid_tokens = [t for t in self.tokens if t.flagged]
+        self.tokens = [t for t in self.tokens if not t.flagged]
 
         if raise_on_error and len(self.errors) > 0:
             first = self.errors[0]
@@ -1041,10 +1050,12 @@ class Lexer:
             # starts again at the letters (id shizuka).  The error is reported on
             # the number, unless an earlier number error already explains it.
             ttype = "flo_lit" if is_float else "int_lit"
-            self.emit(ttype, start, p, "literal", PATTERN_FLO if is_float else PATTERN_INT)
-            if self.zero_resume != start:
+            glued = self.zero_resume != start       # error is reported ON this number
+            self.emit(ttype, start, p, "literal", PATTERN_FLO if is_float else PATTERN_INT,
+                      flagged=glued)
+            if glued:
                 self.error(start,
-                           "Invalid token: an identifier cannot start with a digit, "
+                           "Invalid lexeme: an identifier cannot start with a digit, "
                            "and a number cannot be glued to letters or underscores "
                            "(Identifiers rule 2); '%s' was tokenized as '%s' and "
                            "tokenization starts again at %s."
@@ -1387,8 +1398,7 @@ def run_cli(path):
     for tok in lexer.tokens:
         if tok.type == "newline":
             continue
-        mark = "!" if tok.flagged else " "
-        print("%4d:%-3d %s%-12s %r" % (tok.line, tok.col, mark, tok.type, tok.lexeme))
+        print("%4d:%-3d %-12s %r" % (tok.line, tok.col, tok.type, tok.lexeme))
     for err in lexer.errors:
         print("ERROR %d:%d [%s] %s | expected: %s"
               % (err.line, err.col, err.kind, err.message, err.expected))

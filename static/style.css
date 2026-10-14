@@ -300,11 +300,6 @@ tr:hover {
     font-weight: 500;
 }
 
-.flagged-row {
-    background: #fee2e2 !important;
-    color: var(--error-red);
-}
-
 /* Bottom Console Pane */
 .bottom-pane {
     flex: 4; /* Takes 40% of vertical height */

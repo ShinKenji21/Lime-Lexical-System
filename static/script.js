@@ -19,7 +19,7 @@ Blend add(a: Number, b: Number) -> Number {
 
 const sampleErr = `Vary 4ever_lime: Number = 1
 Vary big: Number = 2147483648
-Vary whole: Rational = 360.
+Vary whole: Rational = 360. 
 Vary name: Word = 'Suisei'
 Vary msg: Word = "path\\folder"
 Blend(x) -> Bland {}
@@ -119,15 +119,16 @@ function renderTokenTable() {
     }
 
     displayTokens.forEach(t => {
+        // Only valid tokens reach the table; invalid ones are reported in the
+        // Error / Console Log instead.
         const tr = document.createElement('tr');
-        if (t.flagged) tr.className = 'flagged-row';
 
         // Render '\n' visually as explicit text in the table
         const displayLexeme = t.type === 'newline' ? '\\n' : t.lexeme;
 
         tr.innerHTML = `
             <td>${t.line}:${t.col}</td>
-            <td><code>${t.flagged ? '⚠️ ' : ''}${escapeHtml(t.type)}</code></td>
+            <td><code>${escapeHtml(t.type)}</code></td>
             <td><code>${escapeHtml(displayLexeme)}</code></td>
             <td>${escapeHtml(t.category)}</td>
         `;
@@ -161,7 +162,7 @@ async function runAnalysis() {
         errStatus.style.color = 'var(--accent-lime)';
         consoleLog.innerHTML = `<div class="log-success">✔ Tokenization succeeded — 0 lexical errors. Recognized ${cachedTokens.length} total tokens.</div>`;
     } else {
-        errStatus.innerText = `Status: ${data.errors.length} Error(s)`;
+        errStatus.innerText = `Status: ${data.errors.length} Error(s) — ${cachedTokens.length} valid token(s)`;
         errStatus.style.color = 'var(--error-red)';
         
         data.errors.forEach((e, idx) => {
@@ -169,6 +170,7 @@ async function runAnalysis() {
             card.className = 'log-error-card';
             card.innerHTML = `
                 <strong>[Error ${idx + 1}] ${escapeHtml(e.kind)} at ${e.line}:${e.col}</strong><br>
+                ${e.lexeme ? `<span>Invalid lexeme: <code>${escapeHtml(e.lexeme)}</code></span><br>` : ''}
                 <span>Reason: ${escapeHtml(e.message)}</span><br>
                 ${e.expected ? `<span style="color: var(--text-muted)">Expected: ${escapeHtml(e.expected)}</span>` : ''}
             `;

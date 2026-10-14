@@ -1,10 +1,24 @@
+/*
+ * script.js - everything the LIME Lexical Analyzer page does in the browser.
+ *
+ * In general: it keeps the line numbers next to the editor, loads/saves/imports
+ * code, sends the code to the server (/analyze) when "Run Lexer" is clicked,
+ * and then draws the valid tokens in the table (right side) and the lexical
+ * errors in the Error / Console Log (bottom).
+ */
+
+// --- Sample programs ------------------------------------------------------------
+// sampleOk  : a program with zero lexical errors.
+// sampleErr : each line shows a different kind of lexical error.
+// (These are the same programs as SAMPLE_OK / SAMPLE_ERR in app.py.)
 const sampleOk = `#( LIME demo: constants, a function, loops and a struct )#
 Same HELLO: Word = "Hello, " # a constant
 Vary world: Word = "Lime \\"Grocer\\"\\n"
 Vary count: Number = 0
 Vary pi: Rational = 3.14
 Vary temp: Rational = -4.5
-Vary lowest: Number = -2147483648
+Vary lowest: Number = -9223372036854775808
+Vary flipped: Number = -count #unary negation
 Vary open: Truth = True
 Vary nums: Number[] = Basket[1, 2, 3]
 
@@ -18,19 +32,24 @@ Blend add(a: Number, b: Number) -> Number {
 }`;
 
 const sampleErr = `Vary 4ever_lime: Number = 1
-Vary big: Number = 2147483648
-Vary whole: Rational = 360. 
+Vary big: Number = 123456789012345678901
+Vary whole: Rational = 360.
 Vary name: Word = 'Suisei'
 Vary msg: Word = "path\\folder"
 Blend(x) -> Bland {}
 Vary q: Number = 10--5
+#
 Vary w: Word = "never closed
 #( this comment is never closed`;
 
-// Global cache for the last fetched token set to support instant toggle re-rendering
+// --- Token cache ----------------------------------------------------------------
+// Keeps the tokens from the last run so the "Show newline tokens" checkbox can
+// redraw the table instantly without asking the server again.
 let cachedTokens = [];
 
-// Line number calculation and scroll synchronization
+// --- Line numbers ---------------------------------------------------------------
+// updateLineNumbers: counts the lines in the editor, writes 1, 2, 3 ... in the
+// gutter on the left, and updates the character counter in the header.
 function updateLineNumbers() {
     const textarea = document.getElementById('code');
     const lines = textarea.value.split('\n').length;
@@ -40,13 +59,16 @@ function updateLineNumbers() {
     syncScroll();
 }
 
+// syncScroll: keeps the line-number gutter scrolled to the same spot as the editor.
 function syncScroll() {
     const textarea = document.getElementById('code');
     const lineNumDiv = document.getElementById('line-numbers');
     lineNumDiv.scrollTop = textarea.scrollTop;
 }
 
-// Reset tables and console views
+// --- Reset ----------------------------------------------------------------------
+// Clears the token table and the error log back to their "ready" state.
+// Used whenever the code in the editor is replaced.
 function resetOutputViews() {
     cachedTokens = [];
     document.getElementById('token-table').innerHTML = '<tr><td colspan="4" class="empty-table-msg">Click \'▶ Run Lexer\' to display generated tokens.</td></tr>';
@@ -57,20 +79,24 @@ function resetOutputViews() {
     errStatus.style.color = 'var(--text-muted)';
 }
 
-// Sample code loaders
+// --- Sample / Clear buttons ------------------------------------------------------
+// loadSample: puts the valid ('ok') or error ('err') sample into the editor.
 function loadSample(type) {
     document.getElementById('code').value = type === 'ok' ? sampleOk : sampleErr;
     updateLineNumbers();
     resetOutputViews();
 }
 
+// clearEditor: empties the editor and the outputs.
 function clearEditor() {
     document.getElementById('code').value = '';
     updateLineNumbers();
     resetOutputViews();
 }
 
-// Import File functionality
+// --- Import File ----------------------------------------------------------------
+// triggerImport opens the hidden file picker; handleFileImport reads the chosen
+// .txt/.lime file and places its text in the editor.
 function triggerImport() {
     document.getElementById('file-input').click();
 }
@@ -89,7 +115,8 @@ function handleFileImport(event) {
     event.target.value = '';
 }
 
-// Save File functionality
+// --- Save File ------------------------------------------------------------------
+// Downloads the current editor text as program.txt.
 function saveToFile() {
     const code = document.getElementById('code').value;
     const blob = new Blob([code], { type: 'text/plain;charset=utf-8' });
@@ -100,7 +127,9 @@ function saveToFile() {
     URL.revokeObjectURL(link.href);
 }
 
-// Render token list into table
+// --- Token table ----------------------------------------------------------------
+// Draws the cached tokens in the right-hand table (Line:Col, Token Type, Lexeme,
+// Category). Newline tokens are hidden unless the checkbox is ticked.
 function renderTokenTable() {
     const tbody = document.getElementById('token-table');
     const showNewlines = document.getElementById('show-newlines').checked;
@@ -136,7 +165,11 @@ function renderTokenTable() {
     });
 }
 
-// Run Lexical Analysis backend request
+// --- Run Lexer ------------------------------------------------------------------
+// Sends the editor text to the server, stores the returned tokens, draws the
+// table, then fills the Error / Console Log: a green success line if there are
+// no errors, otherwise one red card per error showing the invalid lexeme,
+// the reason, and what was expected.
 async function runAnalysis() {
     const code = document.getElementById('code').value;
 
@@ -159,7 +192,7 @@ async function runAnalysis() {
 
     if (data.errors.length === 0) {
         errStatus.innerText = 'Status: OK (0 Errors)';
-        errStatus.style.color = 'var(--accent-lime)';
+        errStatus.style.color = 'var(--primary-lime)';
         consoleLog.innerHTML = `<div class="log-success">✔ Tokenization succeeded — 0 lexical errors. Recognized ${cachedTokens.length} total tokens.</div>`;
     } else {
         errStatus.innerText = `Status: ${data.errors.length} Error(s) — ${cachedTokens.length} valid token(s)`;
@@ -179,7 +212,9 @@ async function runAnalysis() {
     }
 }
 
-// Utility to escape HTML strings safely
+// --- Helper -----------------------------------------------------------------------
+// escapeHtml: makes text safe to put inside the page, so code like <b> or "
+// is shown as text instead of being treated as HTML.
 function escapeHtml(str) {
     if (!str) return '';
     return str
@@ -190,7 +225,10 @@ function escapeHtml(str) {
         .replace(/'/g, "&#039;");
 }
 
-// DOM Event Listeners initialization
+// --- Page start-up -----------------------------------------------------------------
+// When the page finishes loading: hook up scrolling/typing in the editor to the
+// line numbers, make the newline checkbox redraw the table, and draw the first
+// line numbers.
 document.addEventListener('DOMContentLoaded', () => {
     const textarea = document.getElementById('code');
     const newlineCheckbox = document.getElementById('show-newlines');

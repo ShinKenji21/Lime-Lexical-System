@@ -152,10 +152,16 @@ button:hover {
     color: var(--text-muted);
     display: flex;
     align-items: center;
-    gap: 6px;
-    margin-left: 10px;
+    gap: 4px;
     cursor: pointer;
     font-weight: 500;
+}
+
+.show-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-left: 10px;
 }
 
 /* Fixed-Height Layout Container */
@@ -241,6 +247,7 @@ button:hover {
 }
 
 textarea.code-editor {
+    tab-size: 4;
     flex: 1;
     padding: 12px;
     background: #ffffff;

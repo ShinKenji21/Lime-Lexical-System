@@ -8,9 +8,6 @@
 </head>
 <body>
 
-    <!-- Hidden file input for importing local files -->
-    <input type="file" id="file-input" style="display: none;" accept=".txt,.lime" onchange="handleFileImport(event)">
-
     <!-- Top Action Toolbar -->
     <div class="top-bar">
         <div class="brand">
@@ -21,14 +18,12 @@
         </div>
         <div class="actions">
             <button class="btn-tokenize" onclick="runAnalysis()">▶ Run Lexer</button>
-            <button class="btn-blue" onclick="triggerImport()">📂 Import File</button>
-            <button class="btn-secondary" onclick="saveToFile()">💾 Save File</button>
-            <button class="btn-secondary" onclick="loadSample('ok')">&lt;/&gt; Valid Sample</button>
-            <button class="btn-secondary" onclick="loadSample('err')">Error Sample</button>
-            <button class="btn-danger" onclick="clearEditor()">Clear</button>
-            <label class="checkbox-label">
-                <input type="checkbox" id="show-newlines" onchange="runAnalysis()"> Show newline tokens
-            </label>
+            <span class="show-label">Show:</span>
+            <label class="checkbox-label"><input type="checkbox" class="show-toggle" value="newline"> Newline</label>
+            <label class="checkbox-label"><input type="checkbox" class="show-toggle" value="whitespace"> Whitespace</label>
+            <label class="checkbox-label"><input type="checkbox" class="show-toggle" value="tab"> Tab</label>
+            <label class="checkbox-label"><input type="checkbox" class="show-toggle" value="comment"> Comment</label>
+            <label class="checkbox-label"><input type="checkbox" class="show-toggle" value="EOF"> EOF</label>
         </div>
     </div>
 
@@ -46,24 +41,7 @@
                 </div>
                 <div class="editor-wrapper">
                     <div class="line-numbers" id="line-numbers">1</div>
-                    <textarea class="code-editor" id="code" spellcheck="false" oninput="updateLineNumbers()">#( LIME demo: constants, a function, loops and a struct )#
-Same HELLO: Word = "Hello, " # a constant
-Vary world: Word = "Lime \"Grocer\"\n"
-Vary count: Number = 0
-Vary pi: Rational = 3.14
-Vary temp: Rational = -4.5
-Vary lowest: Number = -2147483648
-Vary open: Truth = True
-Vary nums: Number[] = Basket[1, 2, 3]
-
-Recipe Point {
-    Number x
-    Number y
-}
-
-Blend add(a: Number, b: Number) -> Number {
-    Produce a + b
-}</textarea>
+                    <textarea class="code-editor" id="code" spellcheck="false" oninput="updateLineNumbers()" placeholder="Type LIME code here..."></textarea>
                 </div>
             </div>
 
@@ -78,9 +56,9 @@ Blend add(a: Number, b: Number) -> Number {
                         <thead>
                             <tr>
                                 <th>Line:Col</th>
-                                <th>Token Type</th>
                                 <th>Lexeme</th>
-                                <th>Category</th>
+                                <th>Token</th>
+                                <th>Token Type</th>
                             </tr>
                         </thead>
                         <tbody id="token-table">

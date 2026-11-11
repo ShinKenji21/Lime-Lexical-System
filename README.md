@@ -15,5 +15,5 @@ py -m venv .venv
 
 Open <http://127.0.0.1:5000> in your browser. Stop the server with `Ctrl+C`.
 
-The web app uses `LimeLexer.py` for tokenization. Running that file directly
-starts its desktop interface; run `app.py` to use the browser-based interface.
+The lexer is the `lexer/` package. Each scanner follows the paper's transition
+diagrams state by state.

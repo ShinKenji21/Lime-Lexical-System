@@ -98,33 +98,33 @@ def leading_zero(src, start, lexeme):
 
 def too_many_int_digits(src, start, lexeme):
     msg = ("The literal has %d digits before the decimal point, exceeding the "
-           "limit of 20; the diagram has no arrow out of state 371 on another "
+           "limit of 19; the diagram has no arrow out of state 369 on another "
            "digit." % _digit_count(lexeme.split(".")[0]))
-    return _err(src, start, msg, "Number literal too long", 371, "",
-                "at most 20 digits before the decimal point", lexeme)
+    return _err(src, start, msg, "Number literal too long", 369, "",
+                "at most 19 digits before the decimal point", lexeme)
 
 
 def too_many_frac_digits(src, start, lexeme):
     msg = ("The literal has %d digits after the decimal point, exceeding the "
-           "limit of 20; the diagram has no arrow out of state 412 on another "
+           "limit of 17; the diagram has no arrow out of state 404 on another "
            "digit." % _digit_count(lexeme.split(".", 1)[1]))
-    return _err(src, start, msg, "Rational literal too long", 412, "",
-                "at most 20 digits after the decimal point", lexeme)
+    return _err(src, start, msg, "Rational literal too long", 404, "",
+                "at most 17 digits after the decimal point", lexeme)
 
 
 def missing_fraction(src, start, follow_pos, lexeme):
     c = src.text[follow_pos] if follow_pos < src.n else ""
     msg = ("A Rational literal needs at least one digit after the decimal "
-           "point (Literals Rule 2); state 373 has no arrow on %s."
+           "point (Literals Rule 2); state 371 has no arrow on %s."
            % show_char(c))
-    return _err(src, follow_pos, msg, "Invalid rational literal", 373,
+    return _err(src, follow_pos, msg, "Invalid rational literal", 371,
                 show_char(c), "a digit", lexeme)
 
 
 def invalid_escape(src, pos, seq):
     msg = ("Invalid escape sequence %s; Word literals support only \\n, \\t, "
            "\\\\ and \\\" (Literals Rule 4)." % seq)
-    return _err(src, pos, msg, "Invalid escape sequence", 414, seq,
+    return _err(src, pos, msg, "Invalid escape sequence", 406, seq,
                 "\\n, \\t, \\\\, \\\"", seq)
 
 
@@ -132,14 +132,14 @@ def bad_string_char(src, pos):
     c = src.text[pos]
     msg = ("%s is not allowed inside a Word literal (utf8_str); a line break "
            "must be written as \\n." % show_char(c))
-    return _err(src, pos, msg, "Invalid character in Word", 414,
+    return _err(src, pos, msg, "Invalid character in Word", 406,
                 show_char(c), "utf8_str or an escape sequence", c)
 
 
 def unclosed_string(src, start, lexeme):
     msg = ("Word literal is never closed: a newline or the end of the file "
-           "was reached before the closing \" (state 414).")
-    return _err(src, start, msg, "Unclosed Word literal", 414, "", '"',
+           "was reached before the closing \" (state 406).")
+    return _err(src, start, msg, "Unclosed Word literal", 406, "", '"',
                 lexeme)
 
 
@@ -154,7 +154,7 @@ def bad_comment_char(src, pos, state):
 def unclosed_comment(src, start, lexeme):
     msg = ("Multi-line comment is never closed: the end of the file was "
            "reached before )# (Comments Rule 2).")
-    return _err(src, start, msg, "Unclosed comment", 420, "", ")#",
+    return _err(src, start, msg, "Unclosed comment", 412, "", ")#",
                 lexeme[:40] + ("..." if len(lexeme) > 40 else ""))
 
 
@@ -162,5 +162,5 @@ def after_multi_comment(src, pos, lexeme):
     c = src.text[pos] if pos < src.n else ""
     msg = ("Only whitespace may follow )# on the same line (Comments Rules 2 "
            "and 6), but %s was found." % show_char(c))
-    return _err(src, pos, msg, "Invalid delimiter", 422, show_char(c),
+    return _err(src, pos, msg, "Invalid delimiter", 414, show_char(c),
                 DELIM_TEXT["delim_muco"], lexeme[-20:])

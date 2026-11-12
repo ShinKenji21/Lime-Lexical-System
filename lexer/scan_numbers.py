@@ -1,12 +1,14 @@
 """
-scan_numbers.py - int_lit and flo_lit (TD C, states 331-413), including a
+scan_numbers.py - int_lit and flo_lit (TD C, states 331-405), including a
 negative literal written as ~ directly followed by a digit
 (TD B: 220 --zero--> 331, 220 --nonzero--> 333), written as one if / elif
 branch per state.
 
-Whole part : 331 (zero) or 333, 335, ..., 371 (1st to 20th digit)
-Period     : --period--> 373
-Fraction   : 374, 376, ..., 412 (1st to 20th digit)
+Whole part : 331 (zero) or 333, 335, ..., 369 (1st to 19th digit)
+             final state = state + 1 on delim_int
+Period     : --period--> 371
+Fraction   : 372, 374, ..., 404 (1st to 17th digit)
+             final state = state + 1 on delim_flo
 
 The lexer only counts digits; whether the value fits in Number is not checked
 here.
@@ -42,7 +44,7 @@ def scan_number(src, tokens, errors):
                 return
         elif state == 331:                      # 0
             if c == ".":
-                state = 373
+                state = 371
             elif c in DELIM["delim_int"]:
                 accept_literal(src, tokens, start, path, 332, INT_LIT)
                 return
@@ -58,7 +60,7 @@ def scan_number(src, tokens, errors):
             if c in numbers:
                 state = 335
             elif c == ".":
-                state = 373
+                state = 371
             elif c in DELIM["delim_int"]:
                 accept_literal(src, tokens, start, path, 334, INT_LIT)
                 return
@@ -69,7 +71,7 @@ def scan_number(src, tokens, errors):
             if c in numbers:
                 state = 337
             elif c == ".":
-                state = 373
+                state = 371
             elif c in DELIM["delim_int"]:
                 accept_literal(src, tokens, start, path, 336, INT_LIT)
                 return
@@ -80,7 +82,7 @@ def scan_number(src, tokens, errors):
             if c in numbers:
                 state = 339
             elif c == ".":
-                state = 373
+                state = 371
             elif c in DELIM["delim_int"]:
                 accept_literal(src, tokens, start, path, 338, INT_LIT)
                 return
@@ -91,7 +93,7 @@ def scan_number(src, tokens, errors):
             if c in numbers:
                 state = 341
             elif c == ".":
-                state = 373
+                state = 371
             elif c in DELIM["delim_int"]:
                 accept_literal(src, tokens, start, path, 340, INT_LIT)
                 return
@@ -102,7 +104,7 @@ def scan_number(src, tokens, errors):
             if c in numbers:
                 state = 343
             elif c == ".":
-                state = 373
+                state = 371
             elif c in DELIM["delim_int"]:
                 accept_literal(src, tokens, start, path, 342, INT_LIT)
                 return
@@ -113,7 +115,7 @@ def scan_number(src, tokens, errors):
             if c in numbers:
                 state = 345
             elif c == ".":
-                state = 373
+                state = 371
             elif c in DELIM["delim_int"]:
                 accept_literal(src, tokens, start, path, 344, INT_LIT)
                 return
@@ -124,7 +126,7 @@ def scan_number(src, tokens, errors):
             if c in numbers:
                 state = 347
             elif c == ".":
-                state = 373
+                state = 371
             elif c in DELIM["delim_int"]:
                 accept_literal(src, tokens, start, path, 346, INT_LIT)
                 return
@@ -135,7 +137,7 @@ def scan_number(src, tokens, errors):
             if c in numbers:
                 state = 349
             elif c == ".":
-                state = 373
+                state = 371
             elif c in DELIM["delim_int"]:
                 accept_literal(src, tokens, start, path, 348, INT_LIT)
                 return
@@ -146,7 +148,7 @@ def scan_number(src, tokens, errors):
             if c in numbers:
                 state = 351
             elif c == ".":
-                state = 373
+                state = 371
             elif c in DELIM["delim_int"]:
                 accept_literal(src, tokens, start, path, 350, INT_LIT)
                 return
@@ -157,7 +159,7 @@ def scan_number(src, tokens, errors):
             if c in numbers:
                 state = 353
             elif c == ".":
-                state = 373
+                state = 371
             elif c in DELIM["delim_int"]:
                 accept_literal(src, tokens, start, path, 352, INT_LIT)
                 return
@@ -168,7 +170,7 @@ def scan_number(src, tokens, errors):
             if c in numbers:
                 state = 355
             elif c == ".":
-                state = 373
+                state = 371
             elif c in DELIM["delim_int"]:
                 accept_literal(src, tokens, start, path, 354, INT_LIT)
                 return
@@ -179,7 +181,7 @@ def scan_number(src, tokens, errors):
             if c in numbers:
                 state = 357
             elif c == ".":
-                state = 373
+                state = 371
             elif c in DELIM["delim_int"]:
                 accept_literal(src, tokens, start, path, 356, INT_LIT)
                 return
@@ -190,7 +192,7 @@ def scan_number(src, tokens, errors):
             if c in numbers:
                 state = 359
             elif c == ".":
-                state = 373
+                state = 371
             elif c in DELIM["delim_int"]:
                 accept_literal(src, tokens, start, path, 358, INT_LIT)
                 return
@@ -201,7 +203,7 @@ def scan_number(src, tokens, errors):
             if c in numbers:
                 state = 361
             elif c == ".":
-                state = 373
+                state = 371
             elif c in DELIM["delim_int"]:
                 accept_literal(src, tokens, start, path, 360, INT_LIT)
                 return
@@ -212,7 +214,7 @@ def scan_number(src, tokens, errors):
             if c in numbers:
                 state = 363
             elif c == ".":
-                state = 373
+                state = 371
             elif c in DELIM["delim_int"]:
                 accept_literal(src, tokens, start, path, 362, INT_LIT)
                 return
@@ -223,7 +225,7 @@ def scan_number(src, tokens, errors):
             if c in numbers:
                 state = 365
             elif c == ".":
-                state = 373
+                state = 371
             elif c in DELIM["delim_int"]:
                 accept_literal(src, tokens, start, path, 364, INT_LIT)
                 return
@@ -234,7 +236,7 @@ def scan_number(src, tokens, errors):
             if c in numbers:
                 state = 367
             elif c == ".":
-                state = 373
+                state = 371
             elif c in DELIM["delim_int"]:
                 accept_literal(src, tokens, start, path, 366, INT_LIT)
                 return
@@ -245,7 +247,7 @@ def scan_number(src, tokens, errors):
             if c in numbers:
                 state = 369
             elif c == ".":
-                state = 373
+                state = 371
             elif c in DELIM["delim_int"]:
                 accept_literal(src, tokens, start, path, 368, INT_LIT)
                 return
@@ -253,37 +255,35 @@ def scan_number(src, tokens, errors):
                 number_delimiter_error(src, errors, start, 367, "Number literal", "delim_int")
                 return
         elif state == 369:                      # 19 digits
-            if c in numbers:
+            if c == ".":
                 state = 371
-            elif c == ".":
-                state = 373
             elif c in DELIM["delim_int"]:
                 accept_literal(src, tokens, start, path, 370, INT_LIT)
                 return
-            else:
-                number_delimiter_error(src, errors, start, 369, "Number literal", "delim_int")
-                return
-        elif state == 371:                      # 20 digits
-            if c == ".":
-                state = 373
-            elif c in DELIM["delim_int"]:
-                accept_literal(src, tokens, start, path, 372, INT_LIT)
-                return
             elif c in numbers:
-                # 21st digit: no arrow leaves 371 on a digit.
+                # 20th digit: no arrow leaves 369 on a digit.
                 absorb(src, numbers | {"."})
                 errors.append(E.too_many_int_digits(src, start, src.slice(start)))
                 return
             else:
-                number_delimiter_error(src, errors, start, 371, "Number literal", "delim_int")
+                number_delimiter_error(src, errors, start, 369, "Number literal", "delim_int")
                 return
-        elif state == 373:                      # period
+        elif state == 371:                      # period
             if c in numbers:
-                state = 374
+                state = 372
             else:
                 errors.append(E.missing_fraction(src, start, src.pos, src.slice(start)))
                 return
-        elif state == 374:                      # 1 fractional digit
+        elif state == 372:                      # 1 fractional digit
+            if c in numbers:
+                state = 374
+            elif c in DELIM["delim_flo"]:
+                accept_literal(src, tokens, start, path, 373, FLO_LIT)
+                return
+            else:
+                number_delimiter_error(src, errors, start, 372, "Rational literal", "delim_flo")
+                return
+        elif state == 374:                      # 2 fractional digits
             if c in numbers:
                 state = 376
             elif c in DELIM["delim_flo"]:
@@ -292,7 +292,7 @@ def scan_number(src, tokens, errors):
             else:
                 number_delimiter_error(src, errors, start, 374, "Rational literal", "delim_flo")
                 return
-        elif state == 376:                      # 2 fractional digits
+        elif state == 376:                      # 3 fractional digits
             if c in numbers:
                 state = 378
             elif c in DELIM["delim_flo"]:
@@ -301,7 +301,7 @@ def scan_number(src, tokens, errors):
             else:
                 number_delimiter_error(src, errors, start, 376, "Rational literal", "delim_flo")
                 return
-        elif state == 378:                      # 3 fractional digits
+        elif state == 378:                      # 4 fractional digits
             if c in numbers:
                 state = 380
             elif c in DELIM["delim_flo"]:
@@ -310,7 +310,7 @@ def scan_number(src, tokens, errors):
             else:
                 number_delimiter_error(src, errors, start, 378, "Rational literal", "delim_flo")
                 return
-        elif state == 380:                      # 4 fractional digits
+        elif state == 380:                      # 5 fractional digits
             if c in numbers:
                 state = 382
             elif c in DELIM["delim_flo"]:
@@ -319,7 +319,7 @@ def scan_number(src, tokens, errors):
             else:
                 number_delimiter_error(src, errors, start, 380, "Rational literal", "delim_flo")
                 return
-        elif state == 382:                      # 5 fractional digits
+        elif state == 382:                      # 6 fractional digits
             if c in numbers:
                 state = 384
             elif c in DELIM["delim_flo"]:
@@ -328,7 +328,7 @@ def scan_number(src, tokens, errors):
             else:
                 number_delimiter_error(src, errors, start, 382, "Rational literal", "delim_flo")
                 return
-        elif state == 384:                      # 6 fractional digits
+        elif state == 384:                      # 7 fractional digits
             if c in numbers:
                 state = 386
             elif c in DELIM["delim_flo"]:
@@ -337,7 +337,7 @@ def scan_number(src, tokens, errors):
             else:
                 number_delimiter_error(src, errors, start, 384, "Rational literal", "delim_flo")
                 return
-        elif state == 386:                      # 7 fractional digits
+        elif state == 386:                      # 8 fractional digits
             if c in numbers:
                 state = 388
             elif c in DELIM["delim_flo"]:
@@ -346,7 +346,7 @@ def scan_number(src, tokens, errors):
             else:
                 number_delimiter_error(src, errors, start, 386, "Rational literal", "delim_flo")
                 return
-        elif state == 388:                      # 8 fractional digits
+        elif state == 388:                      # 9 fractional digits
             if c in numbers:
                 state = 390
             elif c in DELIM["delim_flo"]:
@@ -355,7 +355,7 @@ def scan_number(src, tokens, errors):
             else:
                 number_delimiter_error(src, errors, start, 388, "Rational literal", "delim_flo")
                 return
-        elif state == 390:                      # 9 fractional digits
+        elif state == 390:                      # 10 fractional digits
             if c in numbers:
                 state = 392
             elif c in DELIM["delim_flo"]:
@@ -364,7 +364,7 @@ def scan_number(src, tokens, errors):
             else:
                 number_delimiter_error(src, errors, start, 390, "Rational literal", "delim_flo")
                 return
-        elif state == 392:                      # 10 fractional digits
+        elif state == 392:                      # 11 fractional digits
             if c in numbers:
                 state = 394
             elif c in DELIM["delim_flo"]:
@@ -373,7 +373,7 @@ def scan_number(src, tokens, errors):
             else:
                 number_delimiter_error(src, errors, start, 392, "Rational literal", "delim_flo")
                 return
-        elif state == 394:                      # 11 fractional digits
+        elif state == 394:                      # 12 fractional digits
             if c in numbers:
                 state = 396
             elif c in DELIM["delim_flo"]:
@@ -382,7 +382,7 @@ def scan_number(src, tokens, errors):
             else:
                 number_delimiter_error(src, errors, start, 394, "Rational literal", "delim_flo")
                 return
-        elif state == 396:                      # 12 fractional digits
+        elif state == 396:                      # 13 fractional digits
             if c in numbers:
                 state = 398
             elif c in DELIM["delim_flo"]:
@@ -391,7 +391,7 @@ def scan_number(src, tokens, errors):
             else:
                 number_delimiter_error(src, errors, start, 396, "Rational literal", "delim_flo")
                 return
-        elif state == 398:                      # 13 fractional digits
+        elif state == 398:                      # 14 fractional digits
             if c in numbers:
                 state = 400
             elif c in DELIM["delim_flo"]:
@@ -400,7 +400,7 @@ def scan_number(src, tokens, errors):
             else:
                 number_delimiter_error(src, errors, start, 398, "Rational literal", "delim_flo")
                 return
-        elif state == 400:                      # 14 fractional digits
+        elif state == 400:                      # 15 fractional digits
             if c in numbers:
                 state = 402
             elif c in DELIM["delim_flo"]:
@@ -409,7 +409,7 @@ def scan_number(src, tokens, errors):
             else:
                 number_delimiter_error(src, errors, start, 400, "Rational literal", "delim_flo")
                 return
-        elif state == 402:                      # 15 fractional digits
+        elif state == 402:                      # 16 fractional digits
             if c in numbers:
                 state = 404
             elif c in DELIM["delim_flo"]:
@@ -418,53 +418,17 @@ def scan_number(src, tokens, errors):
             else:
                 number_delimiter_error(src, errors, start, 402, "Rational literal", "delim_flo")
                 return
-        elif state == 404:                      # 16 fractional digits
-            if c in numbers:
-                state = 406
-            elif c in DELIM["delim_flo"]:
+        elif state == 404:                      # 17 fractional digits
+            if c in DELIM["delim_flo"]:
                 accept_literal(src, tokens, start, path, 405, FLO_LIT)
                 return
-            else:
-                number_delimiter_error(src, errors, start, 404, "Rational literal", "delim_flo")
-                return
-        elif state == 406:                      # 17 fractional digits
-            if c in numbers:
-                state = 408
-            elif c in DELIM["delim_flo"]:
-                accept_literal(src, tokens, start, path, 407, FLO_LIT)
-                return
-            else:
-                number_delimiter_error(src, errors, start, 406, "Rational literal", "delim_flo")
-                return
-        elif state == 408:                      # 18 fractional digits
-            if c in numbers:
-                state = 410
-            elif c in DELIM["delim_flo"]:
-                accept_literal(src, tokens, start, path, 409, FLO_LIT)
-                return
-            else:
-                number_delimiter_error(src, errors, start, 408, "Rational literal", "delim_flo")
-                return
-        elif state == 410:                      # 19 fractional digits
-            if c in numbers:
-                state = 412
-            elif c in DELIM["delim_flo"]:
-                accept_literal(src, tokens, start, path, 411, FLO_LIT)
-                return
-            else:
-                number_delimiter_error(src, errors, start, 410, "Rational literal", "delim_flo")
-                return
-        elif state == 412:                      # 20 fractional digits
-            if c in DELIM["delim_flo"]:
-                accept_literal(src, tokens, start, path, 413, FLO_LIT)
-                return
             elif c in numbers:
-                # 21st fractional digit: no arrow leaves 412.
+                # 18th fractional digit: no arrow leaves 404.
                 absorb(src, numbers)
                 errors.append(E.too_many_frac_digits(src, start, src.slice(start)))
                 return
             else:
-                number_delimiter_error(src, errors, start, 412, "Rational literal", "delim_flo")
+                number_delimiter_error(src, errors, start, 404, "Rational literal", "delim_flo")
                 return
         src.advance()
         path.append(state)

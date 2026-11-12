@@ -47,9 +47,9 @@ class Lexer:
             elif c == "\t":                               # one tab = one token
                 src.advance()
                 tokens.append(make_token(src, TAB, start, CAT_WHITESPACE))
-            elif c == "#":                                # 0 --#--> 417
+            elif c == "#":                                # 0 --#--> 409
                 scan_comment(src, tokens, errors)
-            elif c == '"':                                # 0 --"--> 414
+            elif c == '"':                                # 0 --"--> 406
                 scan_string(src, tokens, errors)
             elif c in numbers:                            # 0 --zero/nonzero--> 331/333
                 scan_number(src, tokens, errors)

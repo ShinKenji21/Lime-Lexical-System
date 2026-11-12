@@ -16,7 +16,6 @@ def scan_string(src, tokens, errors):
     start = src.pos
     state = 0
     path = [0]
-    bad = False                 # an invalid character / escape was reported
     while True:
         c = src.peek()
         if state == 0:                              # start
@@ -33,14 +32,12 @@ def scan_string(src, tokens, errors):
                     src.advance()                   # 406 --escapeseq--> 406
                     src.advance()
                     continue
-                # Not \n \t \\ \" : report it, skip it, keep reading.
-                seq = backslash + (nxt if nxt not in ("", "\n") else "")
-                errors.append(E.invalid_escape(src, src.pos, seq))
+                # Not \n \t \\ \" : no arrow on the character after the
+                # backslash.  Report what was read; scanning goes back to
+                # state 0 at that character.
                 src.advance()
-                if nxt not in ("", "\n"):
-                    src.advance()
-                bad = True
-                continue
+                errors.append(E.invalid_escape(src, start, src.pos, src.slice(start)))
+                return
             elif c == "" or c == "\n":
                 errors.append(E.unclosed_string(src, start, src.slice(start)))
                 return
@@ -48,13 +45,11 @@ def scan_string(src, tokens, errors):
                 src.advance()                       # 406 --utf8_str--> 406
                 continue
             else:
-                errors.append(E.bad_string_char(src, src.pos))
-                src.advance()
-                bad = True
-                continue
+                # no arrow on this character: report what was read; scanning
+                # goes back to state 0 at this character.
+                errors.append(E.bad_string_char(src, start, src.pos, src.slice(start)))
+                return
         elif state == 407:                          # closing quote read
-            if bad:
-                return                              # errors already reported
             if c in DELIM["delim_str"]:
                 accept_literal(src, tokens, start, path, 408, STR_LIT)
                 return

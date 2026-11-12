@@ -4,7 +4,7 @@
  * Keeps the line numbers next to the editor, sends the code to the server
  * (/analyze) when "Run Lexer" is clicked, draws the tokens in the table
  * (Line:Col, Lexeme, Token, Token Type) and the lexical errors in the
- * Error / Console Log.  The "Show" checkboxes hide or show the newline,
+ * Error / Console Log.  "Clear" empties the editor and both outputs.  The "Show" checkboxes hide or show the newline,
  * whitespace, tab, comment and EOF tokens without asking the server again.
  */
 
@@ -126,6 +126,23 @@ async function runAnalysis() {
         `;
         consoleLog.appendChild(card);
     });
+}
+
+// --- Clear ------------------------------------------------------------------------
+// Empties the editor and puts the token table and the log back to "ready".
+function clearEditor() {
+    cachedTokens = [];
+    document.getElementById('code').value = '';
+    updateLineNumbers();
+    document.getElementById('token-table').innerHTML =
+        '<tr><td colspan="4" class="empty-table-msg">Click \'▶ Run Lexer\' to display generated tokens.</td></tr>';
+    document.getElementById('token-count').innerText = '0 Tokens';
+    document.getElementById('console-log').innerHTML =
+        '<span class="log-success">System initialized. Ready to tokenize LIME code.</span>';
+    const errStatus = document.getElementById('error-status');
+    errStatus.innerText = 'Status: Ready';
+    errStatus.style.color = '';
+    document.getElementById('code').focus();
 }
 
 // --- Helper -----------------------------------------------------------------------

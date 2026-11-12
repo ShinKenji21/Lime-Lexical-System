@@ -10,7 +10,7 @@ Rule 6).
 """
 
 from .definitions import DELIM, letters, id_chars
-from .emit import accept_word, word_delimiter_error, accept_id, absorb
+from .emit import accept_word, word_delimiter_error, accept_id
 from . import errors as E
 
 
@@ -1399,8 +1399,8 @@ def scan_identifier(src, tokens, errors):
                 accept_id(src, tokens, start, path, 330)
                 return
             elif c in id_chars:
-                # 31st character: no arrow leaves 329.
-                absorb(src, id_chars)
+                # 31st character: no arrow leaves 329.  Report the 30 characters
+                # read so far; the 31st is scanned again from state 0.
                 errors.append(E.identifier_too_long(src, start, src.slice(start)))
                 return
             else:
@@ -1412,8 +1412,8 @@ def scan_identifier(src, tokens, errors):
 
 
 def scan_underscore(src, tokens, errors):
-    """No arrow leaves state 0 on '_': report the whole run (e.g. _ or
-    _name) as one invalid identifier."""
+    """No arrow leaves state 0 on '_': report the '_' alone and go back to
+    state 0 at the next character (e.g. _name -> error on _, then name)."""
     start = src.pos
-    absorb(src, id_chars)
+    src.advance()
     errors.append(E.underscore_start(src, start, src.slice(start)))

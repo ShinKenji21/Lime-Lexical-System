@@ -6,7 +6,6 @@ the scan_*.py files are only the if / elif state chains.
 
 from .reserved import RW_TOKEN, RW_CATEGORY, SYM_CATEGORY
 from .tokens import make_token, ID, CAT_IDENTIFIER, CAT_LITERAL
-from .definitions import id_chars
 from . import errors as E
 
 
@@ -39,17 +38,9 @@ def accept_symbol(src, tokens, start, path, final, sym):
                              path + [final]))
 
 
-def absorb(src, chars):
-    """Error recovery: swallow the rest of a run of characters so it is
-    reported as one invalid lexeme (e.g. all of 4ever_lime)."""
-    while src.peek() != "" and src.peek() in chars:
-        src.advance()
-
-
 def number_delimiter_error(src, errors, start, state, what, delim):
-    err = E.invalid_delimiter(src, start, src.pos, what, src.slice(start),
-                              delim, state)
-    if src.peek() in id_chars:
-        absorb(src, id_chars)
-        err.lexeme = src.slice(start)
-    errors.append(err)
+    """Number literal followed by a character outside its delimiter set.
+    Nothing more is consumed: scanning goes back to state 0 at that character
+    (e.g. 4ever -> error on 4, then ever is scanned as an identifier)."""
+    errors.append(E.invalid_delimiter(src, start, src.pos, what,
+                                      src.slice(start), delim, state))

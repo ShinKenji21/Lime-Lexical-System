@@ -21,7 +21,6 @@ def scan_comment(src, tokens, errors):
     start = src.pos
     state = 0
     path = [0]
-    bad = False                 # an invalid control character was reported
     while True:
         c = src.peek()
         if state == 0:                              # start
@@ -39,20 +38,18 @@ def scan_comment(src, tokens, errors):
             elif utf8_no_oppa(c):
                 state = 410
             else:
-                errors.append(E.bad_comment_char(src, src.pos, 409))
-                bad = True
-                state = 410
+                errors.append(E.bad_comment_char(src, start, src.pos, 409, src.slice(start)))
+                return                              # back to state 0 at this character
         elif state == 410:                          # single-line comment text
             if c in DELIM["delim_sico"]:
-                if not bad:
-                    tokens.append(make_token(src, SINGLE_COMM, start,
-                                             CAT_COMMENT, 411, path + [411]))
+                tokens.append(make_token(src, SINGLE_COMM, start,
+                                         CAT_COMMENT, 411, path + [411]))
                 return
             elif utf8_comm(c):
                 state = 410
             else:
-                errors.append(E.bad_comment_char(src, src.pos, 410))
-                bad = True
+                errors.append(E.bad_comment_char(src, start, src.pos, 410, src.slice(start)))
+                return                              # back to state 0 at this character
         elif state == 412:                          # multi-line comment text
             if c == ")":
                 state = 413
@@ -62,8 +59,8 @@ def scan_comment(src, tokens, errors):
             elif utf8_comm(c) or c == "\n":
                 state = 412
             else:
-                errors.append(E.bad_comment_char(src, src.pos, 412))
-                bad = True
+                errors.append(E.bad_comment_char(src, start, src.pos, 412, src.slice(start)))
+                return                              # back to state 0 at this character
         elif state == 413:                          # ')' read
             if c == "#":
                 state = 414
@@ -75,9 +72,8 @@ def scan_comment(src, tokens, errors):
             elif utf8_comm(c) or c == "\n":
                 state = 412                         # the ) was comment text
             else:
-                errors.append(E.bad_comment_char(src, src.pos, 413))
-                bad = True
-                state = 412
+                errors.append(E.bad_comment_char(src, start, src.pos, 413, src.slice(start)))
+                return                              # back to state 0 at this character
         elif state == 414:                          # ')#' read
             # 414 --delim_muco--> 415*.  Only whitespace may follow )# before
             # the newline / end of file (Comments Rules 2 and 6).
@@ -87,9 +83,8 @@ def scan_comment(src, tokens, errors):
             if p < src.n and src.text[p] != "\n":
                 errors.append(E.after_multi_comment(src, p, src.slice(start)))
                 return
-            if not bad:
-                tokens.append(make_token(src, MULTI_COMM, start, CAT_COMMENT,
-                                         415, path + [415]))
+            tokens.append(make_token(src, MULTI_COMM, start, CAT_COMMENT,
+                                     415, path + [415]))
             return
         src.advance()
         if path[-1] != state:       # loops (410 -> 410) are shown once

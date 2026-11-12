@@ -15,7 +15,7 @@ here.
 """
 
 from .definitions import DELIM, zero, nonzero, numbers, id_chars
-from .emit import accept_literal, absorb, number_delimiter_error
+from .emit import accept_literal, number_delimiter_error
 from .tokens import INT_LIT, FLO_LIT
 from . import errors as E
 
@@ -49,8 +49,8 @@ def scan_number(src, tokens, errors):
                 accept_literal(src, tokens, start, path, 332, INT_LIT)
                 return
             elif c in numbers:
-                # no arrow on a digit after 0 (no leading zeros)
-                absorb(src, numbers | id_chars)
+                # no arrow on a digit after 0 (no leading zeros).  Report the
+                # 0; the next digit is scanned again from state 0.
                 errors.append(E.leading_zero(src, start, src.slice(start)))
                 return
             else:
@@ -261,8 +261,8 @@ def scan_number(src, tokens, errors):
                 accept_literal(src, tokens, start, path, 370, INT_LIT)
                 return
             elif c in numbers:
-                # 20th digit: no arrow leaves 369 on a digit.
-                absorb(src, numbers | {"."})
+                # 20th digit: no arrow leaves 369 on a digit.  Report the 19
+                # digits read so far; the 20th digit is scanned again from state 0.
                 errors.append(E.too_many_int_digits(src, start, src.slice(start)))
                 return
             else:
@@ -423,8 +423,8 @@ def scan_number(src, tokens, errors):
                 accept_literal(src, tokens, start, path, 405, FLO_LIT)
                 return
             elif c in numbers:
-                # 18th fractional digit: no arrow leaves 404.
-                absorb(src, numbers)
+                # 18th fractional digit: no arrow leaves 404.  Report what was
+                # read so far; the extra digit is scanned again from state 0.
                 errors.append(E.too_many_frac_digits(src, start, src.slice(start)))
                 return
             else:

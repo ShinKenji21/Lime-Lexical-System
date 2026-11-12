@@ -37,10 +37,6 @@ def show_char(c):
     return "'%s'" % c
 
 
-def _digit_count(text):
-    return sum(1 for ch in text if ch.isdigit())
-
-
 def _err(src, pos, message, kind, state, found="", expected="", lexeme=""):
     line, col = src.loc(pos)
     return LexicalError(message, line, col, found, expected, lexeme, kind, state)
@@ -48,14 +44,17 @@ def _err(src, pos, message, kind, state, found="", expected="", lexeme=""):
 
 # --- the messages ---------------------------------------------------------------
 
-def invalid_delimiter(src, start, follow_pos, what, lexeme, delim, state):
+def invalid_delimiter(src, start, follow_pos, what, lexeme, delim, state,
+                      expected=None):
     c = src.text[follow_pos] if follow_pos < src.n else ""
     sline, scol = src.loc(start)
     msg = ("%s '%s' (starting at %d:%d) is followed by %s, which is not in "
            "its delimiter set %s." % (what, lexeme, sline, scol,
                                       show_char(c), delim))
+    if expected is None:
+        expected = DELIM_TEXT[delim]
     return _err(src, follow_pos, msg, "Invalid delimiter", state,
-                show_char(c), DELIM_TEXT[delim], lexeme)
+                show_char(c), expected, lexeme)
 
 
 def illegal_character(src, pos):
@@ -76,40 +75,36 @@ def lone_bang(src, start):
 
 def underscore_start(src, pos, lexeme):
     msg = ("An identifier cannot start with an underscore; the first "
-           "character must be a letter (Identifiers Rules 2 and 4).")
+           "character must be a letter (Identifiers Rules 2 and 4). No arrow "
+           "leaves state 0 on '_'; scanning restarts at the next character.")
     return _err(src, pos, msg, "Invalid identifier", 0, "'_'", "a letter",
                 lexeme)
 
 
 def identifier_too_long(src, start, lexeme):
-    msg = ("Identifier is %d characters long; the limit is 30 (Identifiers "
-           "Rule 3). The diagram has no arrow out of state 329 on another "
-           "letter, digit or underscore." % len(lexeme))
-    return _err(src, start, msg, "Identifier too long", 329, "",
-                "at most 30 characters", lexeme)
+    # 30th character (state 329) followed by a 31st: not in delim_id.
+    return invalid_delimiter(src, start, src.pos, "Identifier", lexeme,
+                             "delim_id", 329)
 
 
 def leading_zero(src, start, lexeme):
-    msg = ("A Number literal that starts with 0 must be 0 alone or be "
-           "followed by a decimal point (int_lit: zero | nonzero numbers*).")
-    return _err(src, start, msg, "Invalid number literal", 331, "",
-                DELIM_TEXT["delim_int"] + ", or a period", lexeme)
+    # 0 (state 331) followed by another digit: not in delim_int.
+    return invalid_delimiter(src, start, src.pos, "Number literal", lexeme,
+                             "delim_int", 331,
+                             DELIM_TEXT["delim_int"] + ", or a period")
 
 
 def too_many_int_digits(src, start, lexeme):
-    msg = ("The literal has %d digits before the decimal point, exceeding the "
-           "limit of 19; the diagram has no arrow out of state 369 on another "
-           "digit." % _digit_count(lexeme.split(".")[0]))
-    return _err(src, start, msg, "Number literal too long", 369, "",
-                "at most 19 digits before the decimal point", lexeme)
+    # 19th digit (state 369) followed by a 20th: not in delim_int.
+    return invalid_delimiter(src, start, src.pos, "Number literal", lexeme,
+                             "delim_int", 369,
+                             DELIM_TEXT["delim_int"] + ", or a period")
 
 
 def too_many_frac_digits(src, start, lexeme):
-    msg = ("The literal has %d digits after the decimal point, exceeding the "
-           "limit of 17; the diagram has no arrow out of state 404 on another "
-           "digit." % _digit_count(lexeme.split(".", 1)[1]))
-    return _err(src, start, msg, "Rational literal too long", 404, "",
-                "at most 17 digits after the decimal point", lexeme)
+    # 17th fractional digit (state 404) followed by an 18th: not in delim_flo.
+    return invalid_delimiter(src, start, src.pos, "Rational literal", lexeme,
+                             "delim_flo", 404)
 
 
 def missing_fraction(src, start, follow_pos, lexeme):
@@ -121,19 +116,22 @@ def missing_fraction(src, start, follow_pos, lexeme):
                 show_char(c), "a digit", lexeme)
 
 
-def invalid_escape(src, pos, seq):
-    msg = ("Invalid escape sequence %s; Word literals support only \\n, \\t, "
-           "\\\\ and \\\" (Literals Rule 4)." % seq)
-    return _err(src, pos, msg, "Invalid escape sequence", 406, seq,
-                "\\n, \\t, \\\\, \\\"", seq)
+def invalid_escape(src, start, pos, lexeme):
+    c = src.peek()
+    msg = ("Invalid escape sequence: the backslash is followed by %s; Word "
+           "literals support only \\n, \\t, \\\\ and \\\" (Literals Rule 4). "
+           "Scanning restarts at that character." % show_char(c))
+    return _err(src, pos, msg, "Invalid escape sequence", 406, show_char(c),
+                "\\n, \\t, \\\\, \\\"", lexeme)
 
 
-def bad_string_char(src, pos):
+def bad_string_char(src, start, pos, lexeme):
     c = src.text[pos]
-    msg = ("%s is not allowed inside a Word literal (utf8_str); a line break "
-           "must be written as \\n." % show_char(c))
+    msg = ("%s is not allowed inside a Word literal (utf8_str); the diagram "
+           "has no arrow out of state 406 on it. Scanning restarts at that "
+           "character." % show_char(c))
     return _err(src, pos, msg, "Invalid character in Word", 406,
-                show_char(c), "utf8_str or an escape sequence", c)
+                show_char(c), "utf8_str or an escape sequence", lexeme)
 
 
 def unclosed_string(src, start, lexeme):
@@ -143,12 +141,14 @@ def unclosed_string(src, start, lexeme):
                 lexeme)
 
 
-def bad_comment_char(src, pos, state):
+def bad_comment_char(src, start, pos, state, lexeme):
     c = src.text[pos]
     msg = ("%s is not allowed in a comment; tab is the only control character "
-           "allowed (Comments Rules 1 and 2)." % show_char(c))
+           "allowed (Comments Rules 1 and 2). The diagram has no arrow out of "
+           "state %d on it; scanning restarts at that character."
+           % (show_char(c), state))
     return _err(src, pos, msg, "Invalid character in comment", state,
-                show_char(c), "utf8_comm", c)
+                show_char(c), "utf8_comm", lexeme)
 
 
 def unclosed_comment(src, start, lexeme):

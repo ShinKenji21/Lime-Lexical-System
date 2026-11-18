@@ -67,100 +67,100 @@ def illegal_character(src, pos):
 
 def lone_bang(src, start):
     c = src.text[start + 1] if start + 1 < src.n else ""
-    msg = ("'!' must be followed by '=' (state 248 has no other arrow); "
+    msg = ("'!' must be followed by '=' (state 242 has no other arrow); "
            "found %s. Use Not for logical negation." % show_char(c))
-    return _err(src, start, msg, "Invalid symbol", 248, show_char(c), "=",
+    return _err(src, start, msg, "Invalid symbol", 242, show_char(c), "=",
                 "!")
 
 
 def underscore_start(src, pos, lexeme):
     msg = ("An identifier cannot start with an underscore; the first "
-           "character must be a letter (Identifiers Rules 2 and 4). No arrow "
+           "character must be a letter (Identifiers Rule 1). No arrow "
            "leaves state 0 on '_'; scanning restarts at the next character.")
     return _err(src, pos, msg, "Invalid identifier", 0, "'_'", "a letter",
                 lexeme)
 
 
 def identifier_too_long(src, start, lexeme):
-    # 30th character (state 329) followed by a 31st: not in delim_id.
+    # 30th character (state 333) followed by a 31st: not in id_delim.
     return invalid_delimiter(src, start, src.pos, "Identifier", lexeme,
-                             "delim_id", 329)
+                             "id_delim", 333)
 
 
 def leading_zero(src, start, lexeme):
-    # 0 (state 331) followed by another digit: not in delim_int.
+    # 0 (state 335) followed by another digit: not in val_delim.
     return invalid_delimiter(src, start, src.pos, "Number literal", lexeme,
-                             "delim_int", 331,
-                             DELIM_TEXT["delim_int"] + ", or a period")
+                             "val_delim", 335,
+                             DELIM_TEXT["val_delim"] + ", or a period")
 
 
 def too_many_int_digits(src, start, lexeme):
-    # 19th digit (state 369) followed by a 20th: not in delim_int.
+    # 18th digit (state 371) followed by a 19th: not in val_delim.
     return invalid_delimiter(src, start, src.pos, "Number literal", lexeme,
-                             "delim_int", 369,
-                             DELIM_TEXT["delim_int"] + ", or a period")
+                             "val_delim", 371,
+                             DELIM_TEXT["val_delim"] + ", or a period")
 
 
 def too_many_frac_digits(src, start, lexeme):
-    # 17th fractional digit (state 404) followed by an 18th: not in delim_flo.
+    # 6th fractional digit (state 384) followed by a 7th: not in val_delim.
     return invalid_delimiter(src, start, src.pos, "Rational literal", lexeme,
-                             "delim_flo", 404)
+                             "val_delim", 384)
 
 
 def missing_fraction(src, start, follow_pos, lexeme):
     c = src.text[follow_pos] if follow_pos < src.n else ""
     msg = ("A Rational literal needs at least one digit after the decimal "
-           "point (Literals Rule 2); state 371 has no arrow on %s."
+           "point (Literals C.2 Rule 1); state 373 has no arrow on %s."
            % show_char(c))
-    return _err(src, follow_pos, msg, "Invalid rational literal", 371,
+    return _err(src, follow_pos, msg, "Invalid rational literal", 373,
                 show_char(c), "a digit", lexeme)
 
 
 def invalid_escape(src, start, pos, lexeme):
     c = src.peek()
     msg = ("Invalid escape sequence: the backslash is followed by %s; Word "
-           "literals support only \\n, \\t, \\\\ and \\\" (Literals Rule 4). "
-           "Scanning restarts at that character." % show_char(c))
-    return _err(src, pos, msg, "Invalid escape sequence", 406, show_char(c),
-                "\\n, \\t, \\\\, \\\"", lexeme)
+           "literals support only \\n, \\t, \\\\ and \\\" (Literals C.3 Rule 4). "
+           "State 389 has no arrow on it; scanning restarts at that character."
+           % show_char(c))
+    return _err(src, pos, msg, "Invalid escape sequence", 389, show_char(c),
+                "esc_char (n, t, \", \\)", lexeme)
 
 
 def bad_string_char(src, start, pos, lexeme):
     c = src.text[pos]
     msg = ("%s is not allowed inside a Word literal (utf8_str); the diagram "
-           "has no arrow out of state 406 on it. Scanning restarts at that "
+           "has no arrow out of state 386 on it. Scanning restarts at that "
            "character." % show_char(c))
-    return _err(src, pos, msg, "Invalid character in Word", 406,
+    return _err(src, pos, msg, "Invalid character in Word", 386,
                 show_char(c), "utf8_str or an escape sequence", lexeme)
 
 
 def unclosed_string(src, start, lexeme):
     msg = ("Word literal is never closed: a newline or the end of the file "
-           "was reached before the closing \" (state 406).")
-    return _err(src, start, msg, "Unclosed Word literal", 406, "", '"',
+           "was reached before the closing \" (Literals C.3 Rule 2, state 386).")
+    return _err(src, start, msg, "Unclosed Word literal", 386, "", '"',
                 lexeme)
 
 
 def bad_comment_char(src, start, pos, state, lexeme):
     c = src.text[pos]
-    msg = ("%s is not allowed in a comment; tab is the only control character "
-           "allowed (Comments Rules 1 and 2). The diagram has no arrow out of "
-           "state %d on it; scanning restarts at that character."
-           % (show_char(c), state))
+    msg = ("%s is not allowed in a comment (utf8_comm: tab is the only control "
+           "character allowed). The diagram has no arrow out of state %d on "
+           "it; scanning restarts at that character." % (show_char(c), state))
     return _err(src, pos, msg, "Invalid character in comment", state,
                 show_char(c), "utf8_comm", lexeme)
 
 
 def unclosed_comment(src, start, lexeme):
     msg = ("Multi-line comment is never closed: the end of the file was "
-           "reached before )# (Comments Rule 2).")
-    return _err(src, start, msg, "Unclosed comment", 412, "", ")#",
+           "reached before )# (Comments Rule 7).")
+    return _err(src, start, msg, "Unclosed comment", 393, "", ")#",
                 lexeme[:40] + ("..." if len(lexeme) > 40 else ""))
 
 
 def after_multi_comment(src, pos, lexeme):
     c = src.text[pos] if pos < src.n else ""
-    msg = ("Only whitespace may follow )# on the same line (Comments Rules 2 "
-           "and 6), but %s was found." % show_char(c))
-    return _err(src, pos, msg, "Invalid delimiter", 414, show_char(c),
-                DELIM_TEXT["delim_muco"], lexeme[-20:])
+    msg = ("Code cannot follow the closing )# of a multi-line comment on the "
+           "same line (Comments Rule 9), but %s was found." % show_char(c))
+    return _err(src, pos, msg, "Invalid delimiter", 395, show_char(c),
+                "only whitespace until the end of the line", lexeme[-20:])

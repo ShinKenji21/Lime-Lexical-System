@@ -10,7 +10,7 @@ from . import errors as E
 
 
 def accept_word(src, tokens, start, path, final, word):
-    """Reserved word reached its final state, e.g. 199 --delim_decl--> 200*."""
+    """Reserved word reached its final state, e.g. 203 --token_delim--> 204* (Vary)."""
     token = RW_TOKEN[word]
     category = CAT_LITERAL if token == "boo_lit" else RW_CATEGORY[word]
     tokens.append(make_token(src, token, start, category, final, path + [final]))

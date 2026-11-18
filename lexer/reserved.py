@@ -1,6 +1,6 @@
 """
-reserved.py - the reserved words (RESERVED WORDS, pp. 12-17) and reserved
-symbols (RESERVED SYMBOLS, pp. 17-19) of LIME with their token type.
+reserved.py - the reserved words (RESERVED WORDS, pp. 13-17) and reserved
+symbols (RESERVED SYMBOLS, pp. 18-21) of LIME with their token type.
 
 The transition-diagram states for them are written out as if / elif
 branches in scan_words.py and scan_symbols.py.
@@ -17,7 +17,7 @@ for _w in ("And", "Or", "Not"):
     RW_CATEGORY[_w] = "Logical Operator"
 for _w in ("True", "False"):
     RW_CATEGORY[_w] = "Truth Literal"
-for _w in ("Test", "Taste", "Stir", "Mix", "Factor", "Harvest", "Try",
+for _w in ("Test", "Taste", "Stir", "Mix", "Pour", "Factor", "Harvest", "Try",
            "Unripe", "Reap", "Uproot", "Produce"):
     RW_CATEGORY[_w] = "Control Flow"
 for _w in ("Absorb", "Squeeze", "ToNumber", "ToRational", "ToWord",

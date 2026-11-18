@@ -1,5 +1,5 @@
 """
-definitions.py - the REGULAR DEFINITIONS section of the LIME paper (pp. 81-84),
+definitions.py - the REGULAR DEFINITIONS section of the LIME paper (pp. 98-100),
 row for row.
 
 Finite character sets are Python sets of one-character strings.  The three
@@ -10,8 +10,8 @@ utf8_no_oppa) are infinite, so they are written as functions that answer
 EOF is represented by the empty string "" (Source.peek() returns "" past the
 end of the file), so a delimiter set that allows EOF simply contains "".
 
-Every delim_* set lives in one dict, DELIM, so the scanners look a delimiter
-up by its name from the transition diagram, e.g. DELIM["delim_int"].
+Every *_delim set lives in one dict, DELIM, so the scanners look a delimiter
+up by its name from the transition diagram, e.g. DELIM["val_delim"].
 """
 
 EOF = ""
@@ -26,6 +26,15 @@ numbers = zero | nonzero
 lets_nums = letters | numbers
 underscore = {"_"}
 
+space = {" "}
+tab = {"\t"}
+newline = {"\n"}          # LF; CR LF is turned into one LF by Source
+whitespace = space | tab | newline
+
+esc_char = {"n", "t", '"', "\\"}   # the character after \ in \n \t \" \\
+backslash = "\\"
+period = {"."}
+
 
 def _is_control(c):
     # U+0000 to U+001F and U+007F (Delete)
@@ -33,8 +42,8 @@ def _is_control(c):
 
 
 def utf8_str(c):
-    """Any UTF-8 character except U+0000-U+001F, U+0022 ("), U+005C (\\) and
-    U+007F.  Tab (U+0009) is the only control character included."""
+    """Any UTF-8 character except U+0000-U+001F, '"' (U+0022), '\\' and
+    Delete (U+007F).  Tab is the only control character included."""
     if c == "":
         return False
     if c == "\t":
@@ -43,8 +52,8 @@ def utf8_str(c):
 
 
 def utf8_comm(c):
-    """Any UTF-8 character except U+0000-U+001F and U+007F.  Tab is the only
-    control character included."""
+    """Any UTF-8 character except U+0000-U+001F and Delete (U+007F).  Tab is
+    the only control character included."""
     if c == "":
         return False
     if c == "\t":
@@ -53,113 +62,92 @@ def utf8_comm(c):
 
 
 def utf8_no_oppa(c):
-    """utf8_comm without U+0028 (opening parenthesis)."""
+    """utf8_comm except '('."""
     return utf8_comm(c) and c != "("
 
 
-backslash = "\\"
-newline = {"\n"}          # LF; CR LF is turned into one LF by Source
-tab = {"\t"}
-newline_esq = "n"         # the character that follows the backslash in \n
-tab_esq = "t"             # \t
-quote_esq = '"'           # \"
-backslash_esq = "\\"      # \\
-escapeseq = {newline_esq, tab_esq, quote_esq, backslash_esq}
-space = {" "}
-whitespace = space | tab
 arith_op = {"+", "-", "*", "/", "%", "^"}
-compare_op = {">", "<"}
-compare_etc = {"==", ">=", "<=", "!="}
-assign_op = {"="}
-assign_etc = {"+=", "-=", "*=", "/=", "%="}
-unary_op = {"++", "--"}
-ret_typ = {"->"}
-multi_comm = {"#(", ")#"}
-comma = {","}
-semi_colon = {";"}
-period = {"."}
-null = ""                 # λ
+rel_op = {"=", "!", ">", "<"}
 eof = {EOF}
 
-# Characters that can continue an identifier (used to decide whether a fully
-# spelled reserved word is really the start of a longer identifier).
+# Characters that can continue an identifier (lets_nums / underscore).  Used to
+# decide whether a fully spelled reserved word is really the start of a longer
+# identifier (Tester, Varying).
 id_chars = lets_nums | underscore
 
-# --- delimiters ---------------------------------------------------------------
-_NW = newline | whitespace
-_OPS = {"+", "-", "*", "/", "%", "^", "=", ">", "<", "!"}
+# --- delimiters ------------------------------------------------------------------
+token_delim = whitespace
+stmt_delim = token_delim | {";"}
+op_delim = token_delim | lets_nums | {"(", "~", "+", "-"}
+op_string_delim = op_delim | {'"'}
+val_delim = stmt_delim | arith_op | rel_op | {",", ")", "]", "{"}
+brace_open_delim = token_delim | letters | {"+", "-", "}", "#"}
 
 DELIM = {
-    "delim_type": _NW | comma | {"="} | semi_colon | {")", "{", "["},
-    "delim_blan": _NW | {"{"},
-    "delim_ctrl": _NW | {"("},
-    "delim_taun": _NW | {"{"},
-    "delim_reup": _NW | semi_colon | {"}"},
-    "delim_prod": _NW | semi_colon | {"(", "}"},
-    "delim_unar": letters | _NW | comma | semi_colon | {")", "]", "}"} | _OPS,
-    "delim_coma": lets_nums | _NW | {"+", "-", "~", '"', "(", "["},
-    "delim_pare": lets_nums | _NW | semi_colon | {"+", "-", "~", '"', "(", ")"},
-    "delim_clpa": _NW | comma | semi_colon | {")", "]", "{", "}"} | _OPS,
-    "delim_clsq": _NW | comma | semi_colon | {")", "[", "]", "{", "}"} | _OPS,
-    "delim_clbr": _NW | {"#", "}"} | eof,
-    "delim_squa": lets_nums | _NW | {"+", "-", "~", "(", "[", "]", '"'},
-    "delim_brac": letters | _NW | {"+", "-", "~", "}", "#"},
-    "delim_colo": {"N", "R", "W", "T"} | _NW,
-    "delim_arrw": {"B", "N", "R", "W", "T"} | _NW,
-    "delim_semi": lets_nums | _NW | semi_colon
-                  | {"+", "-", "~", "(", ")", "}", "#", '"'} | eof,
-    "delim_muco": _NW | eof,
-    "delim_sico": newline | eof,
-    "delim_id": _NW | comma | semi_colon | period
-                | {")", "]", "{", "}", "(", "[", ":"} | _OPS,
-    "delim_str": _NW | comma | semi_colon | {")", "]", "{", "}"} | _OPS,
-    "delim_int": _NW | comma | semi_colon | {")", "]", "{", "}"} | _OPS,
-    "delim_flo": _NW | comma | semi_colon | {")", "]", "{", "}"} | _OPS,
-    "delim_bool": _NW | comma | semi_colon | {")", "]", "{", "}"} | _OPS,
-    "delim_neg": letters | {"(", "~"},
-    "delim_arco": lets_nums | _NW | {"~", "(", '"', "+", "-"},
-    "delim_decl": _NW,
-    "delim_bask": _NW | {"["},
-    "delim_logi": _NW | {"("},
-    "delim_func": _NW | {"("},
-    "delim_dot": letters,
+    "token_delim": token_delim,
+    "stmt_delim": stmt_delim,
+    "method_delim": token_delim | {"("},
+    "block_delim": token_delim | {"{"},
+    "bask_delim": token_delim | {"["},
+    "prod_delim": stmt_delim | {"("},
+    "type_delim": stmt_delim | {",", "=", ")", "[", "{"},
+    "val_delim": val_delim,
+    "id_delim": val_delim | {".", "(", "[", ":"},
+    "clsq_delim": val_delim | {"["},
+    "unary_delim": stmt_delim | letters | arith_op | rel_op | {",", ")", "]"},
+    "op_delim": op_delim,
+    "op_string_delim": op_string_delim,
+    "op_plus_delim": token_delim | lets_nums | {"(", "~", '"', "-"},
+    "op_minus_delim": token_delim | lets_nums | {"(", "~", "+"},
+    "comma_delim": op_string_delim | {"["},
+    "paren_open_delim": op_string_delim | {")", ";"},
+    "bracket_open_delim": op_string_delim | {"[", "]"},
+    "brace_open_delim": brace_open_delim,
+    "brace_close_delim": brace_open_delim | eof,
+    "semi_delim": token_delim | lets_nums
+                  | {";", "+", "-", "~", "(", ")", "}", "#", '"'} | eof,
+    "colon_delim": token_delim | letters,
+    "arrow_delim": token_delim | {"B", "N", "R", "W", "T"},
+    "dot_delim": letters,
+    "neg_delim": letters | {"(", "~"},
+    "sico_delim": newline | eof,
+    "muco_delim": token_delim | eof,
 }
 
 # The same rows as text, used for the "Expected:" line of an error message.
-_NW_T = "newline, whitespace"
-_OPS_T = "+, -, *, /, %, ^, =, >, <, !"
+_WS = "whitespace (space, tab, newline)"
+_ARITH = "+, -, *, /, %, ^"
+_REL = "=, !, >, <"
+_VAL = _WS + ", ;, " + _ARITH + ", " + _REL + ", comma, ), ], {"
+_OP = _WS + ", letters, numbers, (, ~, +, -"
 DELIM_TEXT = {
-    "delim_type": _NW_T + ", comma, =, ;, ), {, [",
-    "delim_blan": _NW_T + ", {",
-    "delim_ctrl": _NW_T + ", (",
-    "delim_taun": _NW_T + ", {",
-    "delim_reup": _NW_T + ", ;, }",
-    "delim_prod": _NW_T + ", ;, (, }",
-    "delim_unar": "letters, " + _NW_T + ", comma, ;, ), ], }, " + _OPS_T,
-    "delim_coma": "letters, numbers, " + _NW_T + ', +, -, ~, ", (, [',
-    "delim_pare": "letters, numbers, " + _NW_T + ', ;, +, -, ~, ", (, )',
-    "delim_clpa": _NW_T + ", comma, ;, ), ], {, }, " + _OPS_T,
-    "delim_clsq": _NW_T + ", comma, ;, ), [, ], {, }, " + _OPS_T,
-    "delim_clbr": _NW_T + ", #, }, EOF",
-    "delim_squa": "letters, numbers, " + _NW_T + ', +, -, ~, (, [, ], "',
-    "delim_brac": "letters, " + _NW_T + ", +, -, ~, }, #",
-    "delim_colo": "N, R, W, T, " + _NW_T,
-    "delim_arrw": "B, N, R, W, T, " + _NW_T,
-    "delim_semi": "letters, numbers, " + _NW_T + ', ;, +, -, ~, (, ), }, #, ", EOF',
-    "delim_muco": _NW_T + ", EOF",
-    "delim_sico": "newline, EOF",
-    "delim_id": _NW_T + ", comma, ;, period, ), ], {, }, (, [, :, " + _OPS_T,
-    "delim_str": _NW_T + ", comma, ;, ), ], {, }, " + _OPS_T,
-    "delim_int": _NW_T + ", comma, ;, ), ], {, }, " + _OPS_T,
-    "delim_flo": _NW_T + ", comma, ;, ), ], {, }, " + _OPS_T,
-    "delim_bool": _NW_T + ", comma, ;, ), ], {, }, " + _OPS_T,
-    "delim_neg": "letters, (, ~",
-    "delim_arco": "letters, numbers, " + _NW_T + ', ~, (, ", +, -',
-    "delim_decl": _NW_T,
-    "delim_bask": _NW_T + ", [",
-    "delim_logi": _NW_T + ", (",
-    "delim_func": _NW_T + ", (",
-    "delim_dot": "letters",
+    "token_delim": _WS,
+    "stmt_delim": _WS + ", ;",
+    "method_delim": _WS + ", (",
+    "block_delim": _WS + ", {",
+    "bask_delim": _WS + ", [",
+    "prod_delim": _WS + ", ;, (",
+    "type_delim": _WS + ", ;, comma, =, ), [, {",
+    "val_delim": _VAL,
+    "id_delim": _VAL + ", ., (, [, :",
+    "clsq_delim": _VAL + ", [",
+    "unary_delim": _WS + ", ;, letters, " + _ARITH + ", " + _REL + ", comma, ), ]",
+    "op_delim": _OP,
+    "op_string_delim": _OP + ', "',
+    "op_plus_delim": _WS + ', letters, numbers, (, ~, ", -',
+    "op_minus_delim": _WS + ", letters, numbers, (, ~, +",
+    "comma_delim": _OP + ', ", [',
+    "paren_open_delim": _OP + ', ", ), ;',
+    "bracket_open_delim": _OP + ', ", [, ]',
+    "brace_open_delim": _WS + ", letters, +, -, }, #",
+    "brace_close_delim": _WS + ", letters, +, -, }, #, EOF",
+    "semi_delim": _WS + ', letters, numbers, ;, +, -, ~, (, ), }, #, ", EOF',
+    "colon_delim": _WS + ", letters",
+    "arrow_delim": _WS + ", B, N, R, W, T",
+    "dot_delim": "letters",
+    "neg_delim": "letters, (, ~",
+    "sico_delim": "newline, EOF",
+    "muco_delim": _WS + ", EOF",
 }
 
 

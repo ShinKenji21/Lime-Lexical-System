@@ -2,8 +2,8 @@
 lexer.py - the main loop (state 0 of every diagram).
 
 Looks at one character and sends it to the scanner whose diagram starts with
-that arrow.  Newlines, runs of spaces, runs of tabs, comments and EOF are
-also emitted as tokens so the page can show or hide them.
+that arrow.  Newlines, each space, each tab, comments and EOF are also
+emitted as tokens so the page can show or hide them.
 
 Errors are collected (not raised) so a single run reports all of them;
 tokenize(raise_on_error=True) raises the first one afterwards.
@@ -47,22 +47,22 @@ class Lexer:
             elif c == "\t":                               # one tab = one token
                 src.advance()
                 tokens.append(make_token(src, TAB, start, CAT_WHITESPACE))
-            elif c == "#":                                # 0 --#--> 409
+            elif c == "#":                                # 0 --#--> 390
                 scan_comment(src, tokens, errors)
-            elif c == '"':                                # 0 --"--> 406
+            elif c == '"':                                # 0 --"--> 386
                 scan_string(src, tokens, errors)
-            elif c in numbers:                            # 0 --zero/nonzero--> 331/333
+            elif c in numbers:                            # 0 --zero/nonzero--> 335/337
                 scan_number(src, tokens, errors)
             elif c == "~" and src.peek(1) in numbers and src.peek(1) != "":
-                scan_number(src, tokens, errors)          # 0 --~--> 220 --digit--> 331/333
+                scan_number(src, tokens, errors)          # 0 --~--> 253 --digit--> 335/337
             elif c in letters:
                 if c in RW_START:                         # 0 --A--> 1, 0 --B--> 17, ...
                     scan_word(src, tokens, errors)
-                else:                                     # 0 --letters--> 271
+                else:                                     # 0 --letters--> 275
                     scan_identifier(src, tokens, errors)
             elif c == "_":
                 scan_underscore(src, tokens, errors)
-            elif c in SYMBOL_START:                       # 0 --+--> 206, ...
+            elif c in SYMBOL_START:                       # 0 --+--> 210, ...
                 scan_symbol(src, tokens, errors)
             else:
                 errors.append(E.illegal_character(src, start))

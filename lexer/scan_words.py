@@ -1,12 +1,12 @@
 """
-scan_words.py - reserved words (TD A, states 0-205) and identifiers
-(TD C, states 271-330), written as one if / elif branch per state.
+scan_words.py - reserved words (TD A, states 0-209) and identifiers
+(TD C, states 275-334), written as one if / elif branch per state.
 
 Reserved words: every state checks the current character against the arrows
 that leave it.  If no arrow matches before the word is fully spelled, or the
-word is spelled but a letter/digit/_ follows (Tester, Varying, Orange), the
+word is spelled but a letter/digit/_ follows (Tester, Varying, TrueStory), the
 same characters are read again with the identifier diagram (Identifiers
-Rule 6).
+Rule 5: only the exact spelling is reserved).
 """
 
 from .definitions import DELIM, letters, id_chars
@@ -44,17 +44,17 @@ def scan_word(src, tokens, errors):
             elif c == "P":
                 state = 89
             elif c == "R":
-                state = 97
+                state = 101
             elif c == "S":
-                state = 120
+                state = 124
             elif c == "T":
-                state = 136
+                state = 140
             elif c == "U":
-                state = 183
+                state = 187
             elif c == "V":
-                state = 196
+                state = 200
             elif c == "W":
-                state = 201
+                state = 205
             else:
                 break
         elif state == 1:      # "A"
@@ -87,13 +87,13 @@ def scan_word(src, tokens, errors):
             else:
                 break
         elif state == 6:      # "Absorb"
-            if c in DELIM["delim_func"]:
+            if c in DELIM["method_delim"]:
                 accept_word(src, tokens, start, path, 7, "Absorb")
                 return
             elif c in id_chars:
-                break                      # longer identifier, e.g. Absorbx
+                break                         # longer identifier, e.g. Absorbx
             else:
-                word_delimiter_error(src, errors, start, 6, "Absorb", "delim_func")
+                word_delimiter_error(src, errors, start, 6, "Absorb", "method_delim")
                 return
         elif state == 8:      # "An"
             if c == "d":
@@ -101,13 +101,13 @@ def scan_word(src, tokens, errors):
             else:
                 break
         elif state == 9:      # "And"
-            if c in DELIM["delim_ctrl"]:
+            if c in DELIM["method_delim"]:
                 accept_word(src, tokens, start, path, 10, "And")
                 return
             elif c in id_chars:
-                break                      # longer identifier, e.g. Andx
+                break                         # longer identifier, e.g. Andx
             else:
-                word_delimiter_error(src, errors, start, 9, "And", "delim_ctrl")
+                word_delimiter_error(src, errors, start, 9, "And", "method_delim")
                 return
         elif state == 11:     # "Ap"
             if c == "p":
@@ -130,13 +130,13 @@ def scan_word(src, tokens, errors):
             else:
                 break
         elif state == 15:     # "Append"
-            if c in DELIM["delim_func"]:
+            if c in DELIM["method_delim"]:
                 accept_word(src, tokens, start, path, 16, "Append")
                 return
             elif c in id_chars:
-                break                      # longer identifier, e.g. Appendx
+                break                         # longer identifier, e.g. Appendx
             else:
-                word_delimiter_error(src, errors, start, 15, "Append", "delim_func")
+                word_delimiter_error(src, errors, start, 15, "Append", "method_delim")
                 return
         elif state == 17:     # "B"
             if c == "a":
@@ -166,13 +166,13 @@ def scan_word(src, tokens, errors):
             else:
                 break
         elif state == 22:     # "Basket"
-            if c in DELIM["delim_bask"]:
+            if c in DELIM["bask_delim"]:
                 accept_word(src, tokens, start, path, 23, "Basket")
                 return
             elif c in id_chars:
-                break                      # longer identifier, e.g. Basketx
+                break                         # longer identifier, e.g. Basketx
             else:
-                word_delimiter_error(src, errors, start, 22, "Basket", "delim_bask")
+                word_delimiter_error(src, errors, start, 22, "Basket", "bask_delim")
                 return
         elif state == 24:     # "Bl"
             if c == "a":
@@ -192,13 +192,13 @@ def scan_word(src, tokens, errors):
             else:
                 break
         elif state == 27:     # "Bland"
-            if c in DELIM["delim_blan"]:
+            if c in DELIM["block_delim"]:
                 accept_word(src, tokens, start, path, 28, "Bland")
                 return
             elif c in id_chars:
-                break                      # longer identifier, e.g. Blandx
+                break                         # longer identifier, e.g. Blandx
             else:
-                word_delimiter_error(src, errors, start, 27, "Bland", "delim_blan")
+                word_delimiter_error(src, errors, start, 27, "Bland", "block_delim")
                 return
         elif state == 29:     # "Ble"
             if c == "n":
@@ -211,13 +211,13 @@ def scan_word(src, tokens, errors):
             else:
                 break
         elif state == 31:     # "Blend"
-            if c in DELIM["delim_decl"]:
+            if c in DELIM["token_delim"]:
                 accept_word(src, tokens, start, path, 32, "Blend")
                 return
             elif c in id_chars:
-                break                      # longer identifier, e.g. Blendx
+                break                         # longer identifier, e.g. Blendx
             else:
-                word_delimiter_error(src, errors, start, 31, "Blend", "delim_decl")
+                word_delimiter_error(src, errors, start, 31, "Blend", "token_delim")
                 return
         elif state == 33:     # "C"
             if c == "l":
@@ -240,13 +240,13 @@ def scan_word(src, tokens, errors):
             else:
                 break
         elif state == 37:     # "Clear"
-            if c in DELIM["delim_func"]:
+            if c in DELIM["method_delim"]:
                 accept_word(src, tokens, start, path, 38, "Clear")
                 return
             elif c in id_chars:
-                break                      # longer identifier, e.g. Clearx
+                break                         # longer identifier, e.g. Clearx
             else:
-                word_delimiter_error(src, errors, start, 37, "Clear", "delim_func")
+                word_delimiter_error(src, errors, start, 37, "Clear", "method_delim")
                 return
         elif state == 39:     # "F"
             if c == "a":
@@ -276,13 +276,13 @@ def scan_word(src, tokens, errors):
             else:
                 break
         elif state == 44:     # "Factor"
-            if c in DELIM["delim_ctrl"]:
+            if c in DELIM["method_delim"]:
                 accept_word(src, tokens, start, path, 45, "Factor")
                 return
             elif c in id_chars:
-                break                      # longer identifier, e.g. Factorx
+                break                         # longer identifier, e.g. Factorx
             else:
-                word_delimiter_error(src, errors, start, 44, "Factor", "delim_ctrl")
+                word_delimiter_error(src, errors, start, 44, "Factor", "method_delim")
                 return
         elif state == 46:     # "Fal"
             if c == "s":
@@ -295,13 +295,13 @@ def scan_word(src, tokens, errors):
             else:
                 break
         elif state == 48:     # "False"
-            if c in DELIM["delim_bool"]:
+            if c in DELIM["val_delim"]:
                 accept_word(src, tokens, start, path, 49, "False")
                 return
             elif c in id_chars:
-                break                      # longer identifier, e.g. Falsex
+                break                         # longer identifier, e.g. Falsex
             else:
-                word_delimiter_error(src, errors, start, 48, "False", "delim_bool")
+                word_delimiter_error(src, errors, start, 48, "False", "val_delim")
                 return
         elif state == 50:     # "H"
             if c == "a":
@@ -334,13 +334,13 @@ def scan_word(src, tokens, errors):
             else:
                 break
         elif state == 56:     # "Harvest"
-            if c in DELIM["delim_ctrl"]:
+            if c in DELIM["method_delim"]:
                 accept_word(src, tokens, start, path, 57, "Harvest")
                 return
             elif c in id_chars:
-                break                      # longer identifier, e.g. Harvestx
+                break                         # longer identifier, e.g. Harvestx
             else:
-                word_delimiter_error(src, errors, start, 56, "Harvest", "delim_ctrl")
+                word_delimiter_error(src, errors, start, 56, "Harvest", "method_delim")
                 return
         elif state == 58:     # "I"
             if c == "n":
@@ -368,13 +368,13 @@ def scan_word(src, tokens, errors):
             else:
                 break
         elif state == 63:     # "Insert"
-            if c in DELIM["delim_func"]:
+            if c in DELIM["method_delim"]:
                 accept_word(src, tokens, start, path, 64, "Insert")
                 return
             elif c in id_chars:
-                break                      # longer identifier, e.g. Insertx
+                break                         # longer identifier, e.g. Insertx
             else:
-                word_delimiter_error(src, errors, start, 63, "Insert", "delim_func")
+                word_delimiter_error(src, errors, start, 63, "Insert", "method_delim")
                 return
         elif state == 65:     # "L"
             if c == "e":
@@ -402,13 +402,13 @@ def scan_word(src, tokens, errors):
             else:
                 break
         elif state == 70:     # "Length"
-            if c in DELIM["delim_func"]:
+            if c in DELIM["method_delim"]:
                 accept_word(src, tokens, start, path, 71, "Length")
                 return
             elif c in id_chars:
-                break                      # longer identifier, e.g. Lengthx
+                break                         # longer identifier, e.g. Lengthx
             else:
-                word_delimiter_error(src, errors, start, 70, "Length", "delim_func")
+                word_delimiter_error(src, errors, start, 70, "Length", "method_delim")
                 return
         elif state == 72:     # "M"
             if c == "i":
@@ -421,13 +421,13 @@ def scan_word(src, tokens, errors):
             else:
                 break
         elif state == 74:     # "Mix"
-            if c in DELIM["delim_ctrl"]:
+            if c in DELIM["method_delim"]:
                 accept_word(src, tokens, start, path, 75, "Mix")
                 return
             elif c in id_chars:
-                break                      # longer identifier, e.g. Mixx
+                break                         # longer identifier, e.g. Mixx
             else:
-                word_delimiter_error(src, errors, start, 74, "Mix", "delim_ctrl")
+                word_delimiter_error(src, errors, start, 74, "Mix", "method_delim")
                 return
         elif state == 76:     # "N"
             if c == "o":
@@ -442,13 +442,13 @@ def scan_word(src, tokens, errors):
             else:
                 break
         elif state == 78:     # "Not"
-            if c in DELIM["delim_ctrl"]:
+            if c in DELIM["method_delim"]:
                 accept_word(src, tokens, start, path, 79, "Not")
                 return
             elif c in id_chars:
-                break                      # longer identifier, e.g. Notx
+                break                         # longer identifier, e.g. Notx
             else:
-                word_delimiter_error(src, errors, start, 78, "Not", "delim_ctrl")
+                word_delimiter_error(src, errors, start, 78, "Not", "method_delim")
                 return
         elif state == 80:     # "Nu"
             if c == "m":
@@ -471,13 +471,13 @@ def scan_word(src, tokens, errors):
             else:
                 break
         elif state == 84:     # "Number"
-            if c in DELIM["delim_type"]:
+            if c in DELIM["type_delim"]:
                 accept_word(src, tokens, start, path, 85, "Number")
                 return
             elif c in id_chars:
-                break                      # longer identifier, e.g. Numberx
+                break                         # longer identifier, e.g. Numberx
             else:
-                word_delimiter_error(src, errors, start, 84, "Number", "delim_type")
+                word_delimiter_error(src, errors, start, 84, "Number", "type_delim")
                 return
         elif state == 86:     # "O"
             if c == "r":
@@ -485,605 +485,626 @@ def scan_word(src, tokens, errors):
             else:
                 break
         elif state == 87:     # "Or"
-            if c in DELIM["delim_ctrl"]:
+            if c in DELIM["method_delim"]:
                 accept_word(src, tokens, start, path, 88, "Or")
                 return
             elif c in id_chars:
-                break                      # longer identifier, e.g. Orx
+                break                         # longer identifier, e.g. Orx
             else:
-                word_delimiter_error(src, errors, start, 87, "Or", "delim_ctrl")
+                word_delimiter_error(src, errors, start, 87, "Or", "method_delim")
                 return
         elif state == 89:     # "P"
-            if c == "r":
-                state = 90
-            else:
-                break
-        elif state == 90:     # "Pr"
             if c == "o":
-                state = 91
-            else:
-                break
-        elif state == 91:     # "Pro"
-            if c == "d":
-                state = 92
-            else:
-                break
-        elif state == 92:     # "Prod"
-            if c == "u":
-                state = 93
-            else:
-                break
-        elif state == 93:     # "Produ"
-            if c == "c":
+                state = 90
+            elif c == "r":
                 state = 94
             else:
                 break
-        elif state == 94:     # "Produc"
-            if c == "e":
+        elif state == 90:     # "Po"
+            if c == "u":
+                state = 91
+            else:
+                break
+        elif state == 91:     # "Pou"
+            if c == "r":
+                state = 92
+            else:
+                break
+        elif state == 92:     # "Pour"
+            if c in DELIM["block_delim"]:
+                accept_word(src, tokens, start, path, 93, "Pour")
+                return
+            elif c in id_chars:
+                break                         # longer identifier, e.g. Pourx
+            else:
+                word_delimiter_error(src, errors, start, 92, "Pour", "block_delim")
+                return
+        elif state == 94:     # "Pr"
+            if c == "o":
                 state = 95
             else:
                 break
-        elif state == 95:     # "Produce"
-            if c in DELIM["delim_prod"]:
-                accept_word(src, tokens, start, path, 96, "Produce")
-                return
-            elif c in id_chars:
-                break                      # longer identifier, e.g. Producex
-            else:
-                word_delimiter_error(src, errors, start, 95, "Produce", "delim_prod")
-                return
-        elif state == 97:     # "R"
-            if c == "a":
-                state = 98
-            elif c == "e":
-                state = 106
+        elif state == 95:     # "Pro"
+            if c == "d":
+                state = 96
             else:
                 break
-        elif state == 98:     # "Ra"
-            if c == "t":
+        elif state == 96:     # "Prod"
+            if c == "u":
+                state = 97
+            else:
+                break
+        elif state == 97:     # "Produ"
+            if c == "c":
+                state = 98
+            else:
+                break
+        elif state == 98:     # "Produc"
+            if c == "e":
                 state = 99
             else:
                 break
-        elif state == 99:     # "Rat"
-            if c == "i":
-                state = 100
+        elif state == 99:     # "Produce"
+            if c in DELIM["prod_delim"]:
+                accept_word(src, tokens, start, path, 100, "Produce")
+                return
+            elif c in id_chars:
+                break                         # longer identifier, e.g. Producex
             else:
-                break
-        elif state == 100:    # "Rati"
-            if c == "o":
-                state = 101
-            else:
-                break
-        elif state == 101:    # "Ratio"
-            if c == "n":
-                state = 102
-            else:
-                break
-        elif state == 102:    # "Ration"
+                word_delimiter_error(src, errors, start, 99, "Produce", "prod_delim")
+                return
+        elif state == 101:    # "R"
             if c == "a":
+                state = 102
+            elif c == "e":
+                state = 110
+            else:
+                break
+        elif state == 102:    # "Ra"
+            if c == "t":
                 state = 103
             else:
                 break
-        elif state == 103:    # "Rationa"
-            if c == "l":
+        elif state == 103:    # "Rat"
+            if c == "i":
                 state = 104
             else:
                 break
-        elif state == 104:    # "Rational"
-            if c in DELIM["delim_type"]:
-                accept_word(src, tokens, start, path, 105, "Rational")
-                return
-            elif c in id_chars:
-                break                      # longer identifier, e.g. Rationalx
-            else:
-                word_delimiter_error(src, errors, start, 104, "Rational", "delim_type")
-                return
-        elif state == 106:    # "Re"
-            if c == "a":
-                state = 107
-            elif c == "c":
-                state = 110
-            elif c == "m":
-                state = 115
+        elif state == 104:    # "Rati"
+            if c == "o":
+                state = 105
             else:
                 break
-        elif state == 107:    # "Rea"
-            if c == "p":
+        elif state == 105:    # "Ratio"
+            if c == "n":
+                state = 106
+            else:
+                break
+        elif state == 106:    # "Ration"
+            if c == "a":
+                state = 107
+            else:
+                break
+        elif state == 107:    # "Rationa"
+            if c == "l":
                 state = 108
             else:
                 break
-        elif state == 108:    # "Reap"
-            if c in DELIM["delim_reup"]:
-                accept_word(src, tokens, start, path, 109, "Reap")
+        elif state == 108:    # "Rational"
+            if c in DELIM["type_delim"]:
+                accept_word(src, tokens, start, path, 109, "Rational")
                 return
             elif c in id_chars:
-                break                      # longer identifier, e.g. Reapx
+                break                         # longer identifier, e.g. Rationalx
             else:
-                word_delimiter_error(src, errors, start, 108, "Reap", "delim_reup")
+                word_delimiter_error(src, errors, start, 108, "Rational", "type_delim")
                 return
-        elif state == 110:    # "Rec"
-            if c == "i":
+        elif state == 110:    # "Re"
+            if c == "a":
                 state = 111
+            elif c == "c":
+                state = 114
+            elif c == "m":
+                state = 119
             else:
                 break
-        elif state == 111:    # "Reci"
+        elif state == 111:    # "Rea"
             if c == "p":
                 state = 112
             else:
                 break
-        elif state == 112:    # "Recip"
-            if c == "e":
-                state = 113
-            else:
-                break
-        elif state == 113:    # "Recipe"
-            if c in DELIM["delim_decl"]:
-                accept_word(src, tokens, start, path, 114, "Recipe")
+        elif state == 112:    # "Reap"
+            if c in DELIM["stmt_delim"]:
+                accept_word(src, tokens, start, path, 113, "Reap")
                 return
             elif c in id_chars:
-                break                      # longer identifier, e.g. Recipex
+                break                         # longer identifier, e.g. Reapx
             else:
-                word_delimiter_error(src, errors, start, 113, "Recipe", "delim_decl")
+                word_delimiter_error(src, errors, start, 112, "Reap", "stmt_delim")
                 return
-        elif state == 115:    # "Rem"
-            if c == "o":
+        elif state == 114:    # "Rec"
+            if c == "i":
+                state = 115
+            else:
+                break
+        elif state == 115:    # "Reci"
+            if c == "p":
                 state = 116
             else:
                 break
-        elif state == 116:    # "Remo"
-            if c == "v":
+        elif state == 116:    # "Recip"
+            if c == "e":
                 state = 117
             else:
                 break
-        elif state == 117:    # "Remov"
-            if c == "e":
-                state = 118
-            else:
-                break
-        elif state == 118:    # "Remove"
-            if c in DELIM["delim_func"]:
-                accept_word(src, tokens, start, path, 119, "Remove")
+        elif state == 117:    # "Recipe"
+            if c in DELIM["token_delim"]:
+                accept_word(src, tokens, start, path, 118, "Recipe")
                 return
             elif c in id_chars:
-                break                      # longer identifier, e.g. Removex
+                break                         # longer identifier, e.g. Recipex
             else:
-                word_delimiter_error(src, errors, start, 118, "Remove", "delim_func")
+                word_delimiter_error(src, errors, start, 117, "Recipe", "token_delim")
                 return
-        elif state == 120:    # "S"
-            if c == "a":
-                state = 121
-            elif c == "q":
-                state = 125
-            elif c == "t":
-                state = 132
+        elif state == 119:    # "Rem"
+            if c == "o":
+                state = 120
             else:
                 break
-        elif state == 121:    # "Sa"
-            if c == "m":
+        elif state == 120:    # "Remo"
+            if c == "v":
+                state = 121
+            else:
+                break
+        elif state == 121:    # "Remov"
+            if c == "e":
                 state = 122
             else:
                 break
-        elif state == 122:    # "Sam"
-            if c == "e":
-                state = 123
-            else:
-                break
-        elif state == 123:    # "Same"
-            if c in DELIM["delim_decl"]:
-                accept_word(src, tokens, start, path, 124, "Same")
+        elif state == 122:    # "Remove"
+            if c in DELIM["method_delim"]:
+                accept_word(src, tokens, start, path, 123, "Remove")
                 return
             elif c in id_chars:
-                break                      # longer identifier, e.g. Samex
+                break                         # longer identifier, e.g. Removex
             else:
-                word_delimiter_error(src, errors, start, 123, "Same", "delim_decl")
+                word_delimiter_error(src, errors, start, 122, "Remove", "method_delim")
                 return
-        elif state == 125:    # "Sq"
-            if c == "u":
+        elif state == 124:    # "S"
+            if c == "a":
+                state = 125
+            elif c == "q":
+                state = 129
+            elif c == "t":
+                state = 136
+            else:
+                break
+        elif state == 125:    # "Sa"
+            if c == "m":
                 state = 126
             else:
                 break
-        elif state == 126:    # "Squ"
+        elif state == 126:    # "Sam"
             if c == "e":
                 state = 127
             else:
                 break
-        elif state == 127:    # "Sque"
-            if c == "e":
-                state = 128
+        elif state == 127:    # "Same"
+            if c in DELIM["token_delim"]:
+                accept_word(src, tokens, start, path, 128, "Same")
+                return
+            elif c in id_chars:
+                break                         # longer identifier, e.g. Samex
             else:
-                break
-        elif state == 128:    # "Squee"
-            if c == "z":
-                state = 129
-            else:
-                break
-        elif state == 129:    # "Squeez"
-            if c == "e":
+                word_delimiter_error(src, errors, start, 127, "Same", "token_delim")
+                return
+        elif state == 129:    # "Sq"
+            if c == "u":
                 state = 130
             else:
                 break
-        elif state == 130:    # "Squeeze"
-            if c in DELIM["delim_func"]:
-                accept_word(src, tokens, start, path, 131, "Squeeze")
-                return
-            elif c in id_chars:
-                break                      # longer identifier, e.g. Squeezex
+        elif state == 130:    # "Squ"
+            if c == "e":
+                state = 131
             else:
-                word_delimiter_error(src, errors, start, 130, "Squeeze", "delim_func")
-                return
-        elif state == 132:    # "St"
-            if c == "i":
+                break
+        elif state == 131:    # "Sque"
+            if c == "e":
+                state = 132
+            else:
+                break
+        elif state == 132:    # "Squee"
+            if c == "z":
                 state = 133
             else:
                 break
-        elif state == 133:    # "Sti"
-            if c == "r":
+        elif state == 133:    # "Squeez"
+            if c == "e":
                 state = 134
             else:
                 break
-        elif state == 134:    # "Stir"
-            if c in DELIM["delim_ctrl"]:
-                accept_word(src, tokens, start, path, 135, "Stir")
+        elif state == 134:    # "Squeeze"
+            if c in DELIM["method_delim"]:
+                accept_word(src, tokens, start, path, 135, "Squeeze")
                 return
             elif c in id_chars:
-                break                      # longer identifier, e.g. Stirx
+                break                         # longer identifier, e.g. Squeezex
             else:
-                word_delimiter_error(src, errors, start, 134, "Stir", "delim_ctrl")
+                word_delimiter_error(src, errors, start, 134, "Squeeze", "method_delim")
                 return
-        elif state == 136:    # "T"
-            if c == "a":
+        elif state == 136:    # "St"
+            if c == "i":
                 state = 137
-            elif c == "e":
-                state = 142
-            elif c == "o":
-                state = 146
-            elif c == "r":
-                state = 174
             else:
                 break
-        elif state == 137:    # "Ta"
-            if c == "s":
+        elif state == 137:    # "Sti"
+            if c == "r":
                 state = 138
             else:
                 break
-        elif state == 138:    # "Tas"
-            if c == "t":
-                state = 139
-            else:
-                break
-        elif state == 139:    # "Tast"
-            if c == "e":
-                state = 140
-            else:
-                break
-        elif state == 140:    # "Taste"
-            if c in DELIM["delim_taun"]:
-                accept_word(src, tokens, start, path, 141, "Taste")
+        elif state == 138:    # "Stir"
+            if c in DELIM["method_delim"]:
+                accept_word(src, tokens, start, path, 139, "Stir")
                 return
             elif c in id_chars:
-                break                      # longer identifier, e.g. Tastex
+                break                         # longer identifier, e.g. Stirx
             else:
-                word_delimiter_error(src, errors, start, 140, "Taste", "delim_taun")
+                word_delimiter_error(src, errors, start, 138, "Stir", "method_delim")
                 return
-        elif state == 142:    # "Te"
-            if c == "s":
-                state = 143
-            else:
-                break
-        elif state == 143:    # "Tes"
-            if c == "t":
-                state = 144
-            else:
-                break
-        elif state == 144:    # "Test"
-            if c in DELIM["delim_ctrl"]:
-                accept_word(src, tokens, start, path, 145, "Test")
-                return
-            elif c in id_chars:
-                break                      # longer identifier, e.g. Testx
-            else:
-                word_delimiter_error(src, errors, start, 144, "Test", "delim_ctrl")
-                return
-        elif state == 146:    # "To"
-            if c == "N":
-                state = 147
-            elif c == "R":
-                state = 154
-            elif c == "T":
-                state = 163
-            elif c == "W":
-                state = 169
-            else:
-                break
-        elif state == 147:    # "ToN"
-            if c == "u":
-                state = 148
-            else:
-                break
-        elif state == 148:    # "ToNu"
-            if c == "m":
-                state = 149
-            else:
-                break
-        elif state == 149:    # "ToNum"
-            if c == "b":
+        elif state == 140:    # "T"
+            if c == "a":
+                state = 141
+            elif c == "e":
+                state = 146
+            elif c == "o":
                 state = 150
-            else:
-                break
-        elif state == 150:    # "ToNumb"
-            if c == "e":
-                state = 151
-            else:
-                break
-        elif state == 151:    # "ToNumbe"
-            if c == "r":
-                state = 152
-            else:
-                break
-        elif state == 152:    # "ToNumber"
-            if c in DELIM["delim_func"]:
-                accept_word(src, tokens, start, path, 153, "ToNumber")
-                return
-            elif c in id_chars:
-                break                      # longer identifier, e.g. ToNumberx
-            else:
-                word_delimiter_error(src, errors, start, 152, "ToNumber", "delim_func")
-                return
-        elif state == 154:    # "ToR"
-            if c == "a":
-                state = 155
-            else:
-                break
-        elif state == 155:    # "ToRa"
-            if c == "t":
-                state = 156
-            else:
-                break
-        elif state == 156:    # "ToRat"
-            if c == "i":
-                state = 157
-            else:
-                break
-        elif state == 157:    # "ToRati"
-            if c == "o":
-                state = 158
-            else:
-                break
-        elif state == 158:    # "ToRatio"
-            if c == "n":
-                state = 159
-            else:
-                break
-        elif state == 159:    # "ToRation"
-            if c == "a":
-                state = 160
-            else:
-                break
-        elif state == 160:    # "ToRationa"
-            if c == "l":
-                state = 161
-            else:
-                break
-        elif state == 161:    # "ToRational"
-            if c in DELIM["delim_func"]:
-                accept_word(src, tokens, start, path, 162, "ToRational")
-                return
-            elif c in id_chars:
-                break                      # longer identifier, e.g. ToRationalx
-            else:
-                word_delimiter_error(src, errors, start, 161, "ToRational", "delim_func")
-                return
-        elif state == 163:    # "ToT"
-            if c == "r":
-                state = 164
-            else:
-                break
-        elif state == 164:    # "ToTr"
-            if c == "u":
-                state = 165
-            else:
-                break
-        elif state == 165:    # "ToTru"
-            if c == "t":
-                state = 166
-            else:
-                break
-        elif state == 166:    # "ToTrut"
-            if c == "h":
-                state = 167
-            else:
-                break
-        elif state == 167:    # "ToTruth"
-            if c in DELIM["delim_func"]:
-                accept_word(src, tokens, start, path, 168, "ToTruth")
-                return
-            elif c in id_chars:
-                break                      # longer identifier, e.g. ToTruthx
-            else:
-                word_delimiter_error(src, errors, start, 167, "ToTruth", "delim_func")
-                return
-        elif state == 169:    # "ToW"
-            if c == "o":
-                state = 170
-            else:
-                break
-        elif state == 170:    # "ToWo"
-            if c == "r":
-                state = 171
-            else:
-                break
-        elif state == 171:    # "ToWor"
-            if c == "d":
-                state = 172
-            else:
-                break
-        elif state == 172:    # "ToWord"
-            if c in DELIM["delim_func"]:
-                accept_word(src, tokens, start, path, 173, "ToWord")
-                return
-            elif c in id_chars:
-                break                      # longer identifier, e.g. ToWordx
-            else:
-                word_delimiter_error(src, errors, start, 172, "ToWord", "delim_func")
-                return
-        elif state == 174:    # "Tr"
-            if c == "u":
-                state = 175
-            elif c == "y":
-                state = 181
-            else:
-                break
-        elif state == 175:    # "Tru"
-            if c == "e":
-                state = 176
-            elif c == "t":
+            elif c == "r":
                 state = 178
             else:
                 break
-        elif state == 176:    # "True"
-            if c in DELIM["delim_bool"]:
-                accept_word(src, tokens, start, path, 177, "True")
-                return
-            elif c in id_chars:
-                break                      # longer identifier, e.g. Truex
-            else:
-                word_delimiter_error(src, errors, start, 176, "True", "delim_bool")
-                return
-        elif state == 178:    # "Trut"
-            if c == "h":
-                state = 179
+        elif state == 141:    # "Ta"
+            if c == "s":
+                state = 142
             else:
                 break
-        elif state == 179:    # "Truth"
-            if c in DELIM["delim_type"]:
-                accept_word(src, tokens, start, path, 180, "Truth")
-                return
-            elif c in id_chars:
-                break                      # longer identifier, e.g. Truthx
-            else:
-                word_delimiter_error(src, errors, start, 179, "Truth", "delim_type")
-                return
-        elif state == 181:    # "Try"
-            if c in DELIM["delim_ctrl"]:
-                accept_word(src, tokens, start, path, 182, "Try")
-                return
-            elif c in id_chars:
-                break                      # longer identifier, e.g. Tryx
-            else:
-                word_delimiter_error(src, errors, start, 181, "Try", "delim_ctrl")
-                return
-        elif state == 183:    # "U"
-            if c == "n":
-                state = 184
-            elif c == "p":
-                state = 190
+        elif state == 142:    # "Tas"
+            if c == "t":
+                state = 143
             else:
                 break
-        elif state == 184:    # "Un"
+        elif state == 143:    # "Tast"
+            if c == "e":
+                state = 144
+            else:
+                break
+        elif state == 144:    # "Taste"
+            if c in DELIM["block_delim"]:
+                accept_word(src, tokens, start, path, 145, "Taste")
+                return
+            elif c in id_chars:
+                break                         # longer identifier, e.g. Tastex
+            else:
+                word_delimiter_error(src, errors, start, 144, "Taste", "block_delim")
+                return
+        elif state == 146:    # "Te"
+            if c == "s":
+                state = 147
+            else:
+                break
+        elif state == 147:    # "Tes"
+            if c == "t":
+                state = 148
+            else:
+                break
+        elif state == 148:    # "Test"
+            if c in DELIM["method_delim"]:
+                accept_word(src, tokens, start, path, 149, "Test")
+                return
+            elif c in id_chars:
+                break                         # longer identifier, e.g. Testx
+            else:
+                word_delimiter_error(src, errors, start, 148, "Test", "method_delim")
+                return
+        elif state == 150:    # "To"
+            if c == "N":
+                state = 151
+            elif c == "R":
+                state = 158
+            elif c == "T":
+                state = 167
+            elif c == "W":
+                state = 173
+            else:
+                break
+        elif state == 151:    # "ToN"
+            if c == "u":
+                state = 152
+            else:
+                break
+        elif state == 152:    # "ToNu"
+            if c == "m":
+                state = 153
+            else:
+                break
+        elif state == 153:    # "ToNum"
+            if c == "b":
+                state = 154
+            else:
+                break
+        elif state == 154:    # "ToNumb"
+            if c == "e":
+                state = 155
+            else:
+                break
+        elif state == 155:    # "ToNumbe"
             if c == "r":
+                state = 156
+            else:
+                break
+        elif state == 156:    # "ToNumber"
+            if c in DELIM["method_delim"]:
+                accept_word(src, tokens, start, path, 157, "ToNumber")
+                return
+            elif c in id_chars:
+                break                         # longer identifier, e.g. ToNumberx
+            else:
+                word_delimiter_error(src, errors, start, 156, "ToNumber", "method_delim")
+                return
+        elif state == 158:    # "ToR"
+            if c == "a":
+                state = 159
+            else:
+                break
+        elif state == 159:    # "ToRa"
+            if c == "t":
+                state = 160
+            else:
+                break
+        elif state == 160:    # "ToRat"
+            if c == "i":
+                state = 161
+            else:
+                break
+        elif state == 161:    # "ToRati"
+            if c == "o":
+                state = 162
+            else:
+                break
+        elif state == 162:    # "ToRatio"
+            if c == "n":
+                state = 163
+            else:
+                break
+        elif state == 163:    # "ToRation"
+            if c == "a":
+                state = 164
+            else:
+                break
+        elif state == 164:    # "ToRationa"
+            if c == "l":
+                state = 165
+            else:
+                break
+        elif state == 165:    # "ToRational"
+            if c in DELIM["method_delim"]:
+                accept_word(src, tokens, start, path, 166, "ToRational")
+                return
+            elif c in id_chars:
+                break                         # longer identifier, e.g. ToRationalx
+            else:
+                word_delimiter_error(src, errors, start, 165, "ToRational", "method_delim")
+                return
+        elif state == 167:    # "ToT"
+            if c == "r":
+                state = 168
+            else:
+                break
+        elif state == 168:    # "ToTr"
+            if c == "u":
+                state = 169
+            else:
+                break
+        elif state == 169:    # "ToTru"
+            if c == "t":
+                state = 170
+            else:
+                break
+        elif state == 170:    # "ToTrut"
+            if c == "h":
+                state = 171
+            else:
+                break
+        elif state == 171:    # "ToTruth"
+            if c in DELIM["method_delim"]:
+                accept_word(src, tokens, start, path, 172, "ToTruth")
+                return
+            elif c in id_chars:
+                break                         # longer identifier, e.g. ToTruthx
+            else:
+                word_delimiter_error(src, errors, start, 171, "ToTruth", "method_delim")
+                return
+        elif state == 173:    # "ToW"
+            if c == "o":
+                state = 174
+            else:
+                break
+        elif state == 174:    # "ToWo"
+            if c == "r":
+                state = 175
+            else:
+                break
+        elif state == 175:    # "ToWor"
+            if c == "d":
+                state = 176
+            else:
+                break
+        elif state == 176:    # "ToWord"
+            if c in DELIM["method_delim"]:
+                accept_word(src, tokens, start, path, 177, "ToWord")
+                return
+            elif c in id_chars:
+                break                         # longer identifier, e.g. ToWordx
+            else:
+                word_delimiter_error(src, errors, start, 176, "ToWord", "method_delim")
+                return
+        elif state == 178:    # "Tr"
+            if c == "u":
+                state = 179
+            elif c == "y":
                 state = 185
             else:
                 break
-        elif state == 185:    # "Unr"
-            if c == "i":
-                state = 186
-            else:
-                break
-        elif state == 186:    # "Unri"
-            if c == "p":
-                state = 187
-            else:
-                break
-        elif state == 187:    # "Unrip"
+        elif state == 179:    # "Tru"
             if c == "e":
-                state = 188
+                state = 180
+            elif c == "t":
+                state = 182
             else:
                 break
-        elif state == 188:    # "Unripe"
-            if c in DELIM["delim_taun"]:
-                accept_word(src, tokens, start, path, 189, "Unripe")
+        elif state == 180:    # "True"
+            if c in DELIM["val_delim"]:
+                accept_word(src, tokens, start, path, 181, "True")
                 return
             elif c in id_chars:
-                break                      # longer identifier, e.g. Unripex
+                break                         # longer identifier, e.g. Truex
             else:
-                word_delimiter_error(src, errors, start, 188, "Unripe", "delim_taun")
+                word_delimiter_error(src, errors, start, 180, "True", "val_delim")
                 return
-        elif state == 190:    # "Up"
-            if c == "r":
-                state = 191
+        elif state == 182:    # "Trut"
+            if c == "h":
+                state = 183
             else:
                 break
-        elif state == 191:    # "Upr"
-            if c == "o":
-                state = 192
+        elif state == 183:    # "Truth"
+            if c in DELIM["type_delim"]:
+                accept_word(src, tokens, start, path, 184, "Truth")
+                return
+            elif c in id_chars:
+                break                         # longer identifier, e.g. Truthx
             else:
-                break
-        elif state == 192:    # "Upro"
-            if c == "o":
-                state = 193
+                word_delimiter_error(src, errors, start, 183, "Truth", "type_delim")
+                return
+        elif state == 185:    # "Try"
+            if c in DELIM["token_delim"]:
+                accept_word(src, tokens, start, path, 186, "Try")
+                return
+            elif c in id_chars:
+                break                         # longer identifier, e.g. Tryx
             else:
-                break
-        elif state == 193:    # "Uproo"
-            if c == "t":
+                word_delimiter_error(src, errors, start, 185, "Try", "token_delim")
+                return
+        elif state == 187:    # "U"
+            if c == "n":
+                state = 188
+            elif c == "p":
                 state = 194
             else:
                 break
-        elif state == 194:    # "Uproot"
-            if c in DELIM["delim_reup"]:
-                accept_word(src, tokens, start, path, 195, "Uproot")
+        elif state == 188:    # "Un"
+            if c == "r":
+                state = 189
+            else:
+                break
+        elif state == 189:    # "Unr"
+            if c == "i":
+                state = 190
+            else:
+                break
+        elif state == 190:    # "Unri"
+            if c == "p":
+                state = 191
+            else:
+                break
+        elif state == 191:    # "Unrip"
+            if c == "e":
+                state = 192
+            else:
+                break
+        elif state == 192:    # "Unripe"
+            if c in DELIM["block_delim"]:
+                accept_word(src, tokens, start, path, 193, "Unripe")
                 return
             elif c in id_chars:
-                break                      # longer identifier, e.g. Uprootx
+                break                         # longer identifier, e.g. Unripex
             else:
-                word_delimiter_error(src, errors, start, 194, "Uproot", "delim_reup")
+                word_delimiter_error(src, errors, start, 192, "Unripe", "block_delim")
                 return
-        elif state == 196:    # "V"
-            if c == "a":
+        elif state == 194:    # "Up"
+            if c == "r":
+                state = 195
+            else:
+                break
+        elif state == 195:    # "Upr"
+            if c == "o":
+                state = 196
+            else:
+                break
+        elif state == 196:    # "Upro"
+            if c == "o":
                 state = 197
             else:
                 break
-        elif state == 197:    # "Va"
-            if c == "r":
+        elif state == 197:    # "Uproo"
+            if c == "t":
                 state = 198
             else:
                 break
-        elif state == 198:    # "Var"
-            if c == "y":
-                state = 199
-            else:
-                break
-        elif state == 199:    # "Vary"
-            if c in DELIM["delim_decl"]:
-                accept_word(src, tokens, start, path, 200, "Vary")
+        elif state == 198:    # "Uproot"
+            if c in DELIM["stmt_delim"]:
+                accept_word(src, tokens, start, path, 199, "Uproot")
                 return
             elif c in id_chars:
-                break                      # longer identifier, e.g. Varyx
+                break                         # longer identifier, e.g. Uprootx
             else:
-                word_delimiter_error(src, errors, start, 199, "Vary", "delim_decl")
+                word_delimiter_error(src, errors, start, 198, "Uproot", "stmt_delim")
                 return
-        elif state == 201:    # "W"
-            if c == "o":
+        elif state == 200:    # "V"
+            if c == "a":
+                state = 201
+            else:
+                break
+        elif state == 201:    # "Va"
+            if c == "r":
                 state = 202
             else:
                 break
-        elif state == 202:    # "Wo"
-            if c == "r":
+        elif state == 202:    # "Var"
+            if c == "y":
                 state = 203
             else:
                 break
-        elif state == 203:    # "Wor"
-            if c == "d":
-                state = 204
-            else:
-                break
-        elif state == 204:    # "Word"
-            if c in DELIM["delim_type"]:
-                accept_word(src, tokens, start, path, 205, "Word")
+        elif state == 203:    # "Vary"
+            if c in DELIM["token_delim"]:
+                accept_word(src, tokens, start, path, 204, "Vary")
                 return
             elif c in id_chars:
-                break                      # longer identifier, e.g. Wordx
+                break                         # longer identifier, e.g. Varyx
             else:
-                word_delimiter_error(src, errors, start, 204, "Word", "delim_type")
+                word_delimiter_error(src, errors, start, 203, "Vary", "token_delim")
+                return
+        elif state == 205:    # "W"
+            if c == "o":
+                state = 206
+            else:
+                break
+        elif state == 206:    # "Wo"
+            if c == "r":
+                state = 207
+            else:
+                break
+        elif state == 207:    # "Wor"
+            if c == "d":
+                state = 208
+            else:
+                break
+        elif state == 208:    # "Word"
+            if c in DELIM["type_delim"]:
+                accept_word(src, tokens, start, path, 209, "Word")
+                return
+            elif c in id_chars:
+                break                         # longer identifier, e.g. Wordx
+            else:
+                word_delimiter_error(src, errors, start, 208, "Word", "type_delim")
                 return
         src.advance()
         path.append(state)
@@ -1099,313 +1120,313 @@ def scan_identifier(src, tokens, errors):
     path = [0]
     while True:
         c = src.peek()
-        if state == 0:
+        if state == 0:                # start
             if c in letters:
-                state = 271
-            else:
-                return
-        elif state == 271:                         # 1 character
-            if c in id_chars:
-                state = 273
-            elif c in DELIM["delim_id"]:
-                accept_id(src, tokens, start, path, 272)
-                return
-            else:
-                errors.append(E.invalid_delimiter(src, start, src.pos, "Identifier",
-                                                  src.slice(start), "delim_id", 271))
-                return
-        elif state == 273:                         # 2 characters
-            if c in id_chars:
                 state = 275
-            elif c in DELIM["delim_id"]:
-                accept_id(src, tokens, start, path, 274)
-                return
             else:
-                errors.append(E.invalid_delimiter(src, start, src.pos, "Identifier",
-                                                  src.slice(start), "delim_id", 273))
                 return
-        elif state == 275:                         # 3 characters
+        elif state == 275:    # 1 character
             if c in id_chars:
                 state = 277
-            elif c in DELIM["delim_id"]:
+            elif c in DELIM["id_delim"]:
                 accept_id(src, tokens, start, path, 276)
                 return
             else:
                 errors.append(E.invalid_delimiter(src, start, src.pos, "Identifier",
-                                                  src.slice(start), "delim_id", 275))
+                                                  src.slice(start), "id_delim", 275))
                 return
-        elif state == 277:                         # 4 characters
+        elif state == 277:    # 2 characters
             if c in id_chars:
                 state = 279
-            elif c in DELIM["delim_id"]:
+            elif c in DELIM["id_delim"]:
                 accept_id(src, tokens, start, path, 278)
                 return
             else:
                 errors.append(E.invalid_delimiter(src, start, src.pos, "Identifier",
-                                                  src.slice(start), "delim_id", 277))
+                                                  src.slice(start), "id_delim", 277))
                 return
-        elif state == 279:                         # 5 characters
+        elif state == 279:    # 3 characters
             if c in id_chars:
                 state = 281
-            elif c in DELIM["delim_id"]:
+            elif c in DELIM["id_delim"]:
                 accept_id(src, tokens, start, path, 280)
                 return
             else:
                 errors.append(E.invalid_delimiter(src, start, src.pos, "Identifier",
-                                                  src.slice(start), "delim_id", 279))
+                                                  src.slice(start), "id_delim", 279))
                 return
-        elif state == 281:                         # 6 characters
+        elif state == 281:    # 4 characters
             if c in id_chars:
                 state = 283
-            elif c in DELIM["delim_id"]:
+            elif c in DELIM["id_delim"]:
                 accept_id(src, tokens, start, path, 282)
                 return
             else:
                 errors.append(E.invalid_delimiter(src, start, src.pos, "Identifier",
-                                                  src.slice(start), "delim_id", 281))
+                                                  src.slice(start), "id_delim", 281))
                 return
-        elif state == 283:                         # 7 characters
+        elif state == 283:    # 5 characters
             if c in id_chars:
                 state = 285
-            elif c in DELIM["delim_id"]:
+            elif c in DELIM["id_delim"]:
                 accept_id(src, tokens, start, path, 284)
                 return
             else:
                 errors.append(E.invalid_delimiter(src, start, src.pos, "Identifier",
-                                                  src.slice(start), "delim_id", 283))
+                                                  src.slice(start), "id_delim", 283))
                 return
-        elif state == 285:                         # 8 characters
+        elif state == 285:    # 6 characters
             if c in id_chars:
                 state = 287
-            elif c in DELIM["delim_id"]:
+            elif c in DELIM["id_delim"]:
                 accept_id(src, tokens, start, path, 286)
                 return
             else:
                 errors.append(E.invalid_delimiter(src, start, src.pos, "Identifier",
-                                                  src.slice(start), "delim_id", 285))
+                                                  src.slice(start), "id_delim", 285))
                 return
-        elif state == 287:                         # 9 characters
+        elif state == 287:    # 7 characters
             if c in id_chars:
                 state = 289
-            elif c in DELIM["delim_id"]:
+            elif c in DELIM["id_delim"]:
                 accept_id(src, tokens, start, path, 288)
                 return
             else:
                 errors.append(E.invalid_delimiter(src, start, src.pos, "Identifier",
-                                                  src.slice(start), "delim_id", 287))
+                                                  src.slice(start), "id_delim", 287))
                 return
-        elif state == 289:                         # 10 characters
+        elif state == 289:    # 8 characters
             if c in id_chars:
                 state = 291
-            elif c in DELIM["delim_id"]:
+            elif c in DELIM["id_delim"]:
                 accept_id(src, tokens, start, path, 290)
                 return
             else:
                 errors.append(E.invalid_delimiter(src, start, src.pos, "Identifier",
-                                                  src.slice(start), "delim_id", 289))
+                                                  src.slice(start), "id_delim", 289))
                 return
-        elif state == 291:                         # 11 characters
+        elif state == 291:    # 9 characters
             if c in id_chars:
                 state = 293
-            elif c in DELIM["delim_id"]:
+            elif c in DELIM["id_delim"]:
                 accept_id(src, tokens, start, path, 292)
                 return
             else:
                 errors.append(E.invalid_delimiter(src, start, src.pos, "Identifier",
-                                                  src.slice(start), "delim_id", 291))
+                                                  src.slice(start), "id_delim", 291))
                 return
-        elif state == 293:                         # 12 characters
+        elif state == 293:    # 10 characters
             if c in id_chars:
                 state = 295
-            elif c in DELIM["delim_id"]:
+            elif c in DELIM["id_delim"]:
                 accept_id(src, tokens, start, path, 294)
                 return
             else:
                 errors.append(E.invalid_delimiter(src, start, src.pos, "Identifier",
-                                                  src.slice(start), "delim_id", 293))
+                                                  src.slice(start), "id_delim", 293))
                 return
-        elif state == 295:                         # 13 characters
+        elif state == 295:    # 11 characters
             if c in id_chars:
                 state = 297
-            elif c in DELIM["delim_id"]:
+            elif c in DELIM["id_delim"]:
                 accept_id(src, tokens, start, path, 296)
                 return
             else:
                 errors.append(E.invalid_delimiter(src, start, src.pos, "Identifier",
-                                                  src.slice(start), "delim_id", 295))
+                                                  src.slice(start), "id_delim", 295))
                 return
-        elif state == 297:                         # 14 characters
+        elif state == 297:    # 12 characters
             if c in id_chars:
                 state = 299
-            elif c in DELIM["delim_id"]:
+            elif c in DELIM["id_delim"]:
                 accept_id(src, tokens, start, path, 298)
                 return
             else:
                 errors.append(E.invalid_delimiter(src, start, src.pos, "Identifier",
-                                                  src.slice(start), "delim_id", 297))
+                                                  src.slice(start), "id_delim", 297))
                 return
-        elif state == 299:                         # 15 characters
+        elif state == 299:    # 13 characters
             if c in id_chars:
                 state = 301
-            elif c in DELIM["delim_id"]:
+            elif c in DELIM["id_delim"]:
                 accept_id(src, tokens, start, path, 300)
                 return
             else:
                 errors.append(E.invalid_delimiter(src, start, src.pos, "Identifier",
-                                                  src.slice(start), "delim_id", 299))
+                                                  src.slice(start), "id_delim", 299))
                 return
-        elif state == 301:                         # 16 characters
+        elif state == 301:    # 14 characters
             if c in id_chars:
                 state = 303
-            elif c in DELIM["delim_id"]:
+            elif c in DELIM["id_delim"]:
                 accept_id(src, tokens, start, path, 302)
                 return
             else:
                 errors.append(E.invalid_delimiter(src, start, src.pos, "Identifier",
-                                                  src.slice(start), "delim_id", 301))
+                                                  src.slice(start), "id_delim", 301))
                 return
-        elif state == 303:                         # 17 characters
+        elif state == 303:    # 15 characters
             if c in id_chars:
                 state = 305
-            elif c in DELIM["delim_id"]:
+            elif c in DELIM["id_delim"]:
                 accept_id(src, tokens, start, path, 304)
                 return
             else:
                 errors.append(E.invalid_delimiter(src, start, src.pos, "Identifier",
-                                                  src.slice(start), "delim_id", 303))
+                                                  src.slice(start), "id_delim", 303))
                 return
-        elif state == 305:                         # 18 characters
+        elif state == 305:    # 16 characters
             if c in id_chars:
                 state = 307
-            elif c in DELIM["delim_id"]:
+            elif c in DELIM["id_delim"]:
                 accept_id(src, tokens, start, path, 306)
                 return
             else:
                 errors.append(E.invalid_delimiter(src, start, src.pos, "Identifier",
-                                                  src.slice(start), "delim_id", 305))
+                                                  src.slice(start), "id_delim", 305))
                 return
-        elif state == 307:                         # 19 characters
+        elif state == 307:    # 17 characters
             if c in id_chars:
                 state = 309
-            elif c in DELIM["delim_id"]:
+            elif c in DELIM["id_delim"]:
                 accept_id(src, tokens, start, path, 308)
                 return
             else:
                 errors.append(E.invalid_delimiter(src, start, src.pos, "Identifier",
-                                                  src.slice(start), "delim_id", 307))
+                                                  src.slice(start), "id_delim", 307))
                 return
-        elif state == 309:                         # 20 characters
+        elif state == 309:    # 18 characters
             if c in id_chars:
                 state = 311
-            elif c in DELIM["delim_id"]:
+            elif c in DELIM["id_delim"]:
                 accept_id(src, tokens, start, path, 310)
                 return
             else:
                 errors.append(E.invalid_delimiter(src, start, src.pos, "Identifier",
-                                                  src.slice(start), "delim_id", 309))
+                                                  src.slice(start), "id_delim", 309))
                 return
-        elif state == 311:                         # 21 characters
+        elif state == 311:    # 19 characters
             if c in id_chars:
                 state = 313
-            elif c in DELIM["delim_id"]:
+            elif c in DELIM["id_delim"]:
                 accept_id(src, tokens, start, path, 312)
                 return
             else:
                 errors.append(E.invalid_delimiter(src, start, src.pos, "Identifier",
-                                                  src.slice(start), "delim_id", 311))
+                                                  src.slice(start), "id_delim", 311))
                 return
-        elif state == 313:                         # 22 characters
+        elif state == 313:    # 20 characters
             if c in id_chars:
                 state = 315
-            elif c in DELIM["delim_id"]:
+            elif c in DELIM["id_delim"]:
                 accept_id(src, tokens, start, path, 314)
                 return
             else:
                 errors.append(E.invalid_delimiter(src, start, src.pos, "Identifier",
-                                                  src.slice(start), "delim_id", 313))
+                                                  src.slice(start), "id_delim", 313))
                 return
-        elif state == 315:                         # 23 characters
+        elif state == 315:    # 21 characters
             if c in id_chars:
                 state = 317
-            elif c in DELIM["delim_id"]:
+            elif c in DELIM["id_delim"]:
                 accept_id(src, tokens, start, path, 316)
                 return
             else:
                 errors.append(E.invalid_delimiter(src, start, src.pos, "Identifier",
-                                                  src.slice(start), "delim_id", 315))
+                                                  src.slice(start), "id_delim", 315))
                 return
-        elif state == 317:                         # 24 characters
+        elif state == 317:    # 22 characters
             if c in id_chars:
                 state = 319
-            elif c in DELIM["delim_id"]:
+            elif c in DELIM["id_delim"]:
                 accept_id(src, tokens, start, path, 318)
                 return
             else:
                 errors.append(E.invalid_delimiter(src, start, src.pos, "Identifier",
-                                                  src.slice(start), "delim_id", 317))
+                                                  src.slice(start), "id_delim", 317))
                 return
-        elif state == 319:                         # 25 characters
+        elif state == 319:    # 23 characters
             if c in id_chars:
                 state = 321
-            elif c in DELIM["delim_id"]:
+            elif c in DELIM["id_delim"]:
                 accept_id(src, tokens, start, path, 320)
                 return
             else:
                 errors.append(E.invalid_delimiter(src, start, src.pos, "Identifier",
-                                                  src.slice(start), "delim_id", 319))
+                                                  src.slice(start), "id_delim", 319))
                 return
-        elif state == 321:                         # 26 characters
+        elif state == 321:    # 24 characters
             if c in id_chars:
                 state = 323
-            elif c in DELIM["delim_id"]:
+            elif c in DELIM["id_delim"]:
                 accept_id(src, tokens, start, path, 322)
                 return
             else:
                 errors.append(E.invalid_delimiter(src, start, src.pos, "Identifier",
-                                                  src.slice(start), "delim_id", 321))
+                                                  src.slice(start), "id_delim", 321))
                 return
-        elif state == 323:                         # 27 characters
+        elif state == 323:    # 25 characters
             if c in id_chars:
                 state = 325
-            elif c in DELIM["delim_id"]:
+            elif c in DELIM["id_delim"]:
                 accept_id(src, tokens, start, path, 324)
                 return
             else:
                 errors.append(E.invalid_delimiter(src, start, src.pos, "Identifier",
-                                                  src.slice(start), "delim_id", 323))
+                                                  src.slice(start), "id_delim", 323))
                 return
-        elif state == 325:                         # 28 characters
+        elif state == 325:    # 26 characters
             if c in id_chars:
                 state = 327
-            elif c in DELIM["delim_id"]:
+            elif c in DELIM["id_delim"]:
                 accept_id(src, tokens, start, path, 326)
                 return
             else:
                 errors.append(E.invalid_delimiter(src, start, src.pos, "Identifier",
-                                                  src.slice(start), "delim_id", 325))
+                                                  src.slice(start), "id_delim", 325))
                 return
-        elif state == 327:                         # 29 characters
+        elif state == 327:    # 27 characters
             if c in id_chars:
                 state = 329
-            elif c in DELIM["delim_id"]:
+            elif c in DELIM["id_delim"]:
                 accept_id(src, tokens, start, path, 328)
                 return
             else:
                 errors.append(E.invalid_delimiter(src, start, src.pos, "Identifier",
-                                                  src.slice(start), "delim_id", 327))
+                                                  src.slice(start), "id_delim", 327))
                 return
-        elif state == 329:                         # 30 characters
-            if c in DELIM["delim_id"]:
+        elif state == 329:    # 28 characters
+            if c in id_chars:
+                state = 331
+            elif c in DELIM["id_delim"]:
                 accept_id(src, tokens, start, path, 330)
                 return
+            else:
+                errors.append(E.invalid_delimiter(src, start, src.pos, "Identifier",
+                                                  src.slice(start), "id_delim", 329))
+                return
+        elif state == 331:    # 29 characters
+            if c in id_chars:
+                state = 333
+            elif c in DELIM["id_delim"]:
+                accept_id(src, tokens, start, path, 332)
+                return
+            else:
+                errors.append(E.invalid_delimiter(src, start, src.pos, "Identifier",
+                                                  src.slice(start), "id_delim", 331))
+                return
+        elif state == 333:    # 30 characters
+            if c in DELIM["id_delim"]:
+                accept_id(src, tokens, start, path, 334)
+                return
             elif c in id_chars:
-                # 31st character: no arrow leaves 329.  Report the 30 characters
+                # 31st character: no arrow leaves 333.  Report the 30 characters
                 # read so far; the 31st is scanned again from state 0.
                 errors.append(E.identifier_too_long(src, start, src.slice(start)))
                 return
             else:
                 errors.append(E.invalid_delimiter(src, start, src.pos, "Identifier",
-                                                  src.slice(start), "delim_id", 329))
+                                                  src.slice(start), "id_delim", 333))
                 return
         src.advance()
         path.append(state)
